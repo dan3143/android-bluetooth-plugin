@@ -61,7 +61,7 @@ def keydown(e):
     elif key == 'a':
         send('a')
     elif key == 'b':
-        send('a')
+        send('b')
 
 if __name__ == '__main__':
     socket = None
