@@ -1,0 +1,3 @@
+rootProject.name='GenericBluetooth'
+include ':app', ':classes'
+include ':app:bluetooth'

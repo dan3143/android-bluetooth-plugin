@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="10dp">
+        <TextView
+            android:id="@+id/device_name"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:textSize="17dp"
+            />
+        <TextView
+            android:id="@+id/mac_address"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:textSize="10dp"
+            />
+</LinearLayout>

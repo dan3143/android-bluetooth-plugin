@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">GenericBluetooth</string>
+    <string name="connect">Connect</string>
+    <string name="choose">Choose a device</string>
+    <string name="start_server">Start server</string>
+    <string name="stop_server">Stop server</string>
+</resources>
