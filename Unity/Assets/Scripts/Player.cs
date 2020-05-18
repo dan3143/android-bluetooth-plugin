@@ -9,42 +9,37 @@ public class Player : MonoBehaviour
     Vector2 position;
     Bluetooth bt;
     public UIManager ui;
+    bool movingLeft;
+    bool movingRight;
 
     void Start(){
         position = transform.position;
         Time.timeScale = 0;
     }
 
-    void Update()
+    void FixedUpdate()
     {
-
-    }
-
-    void Message(string message)
-    {
-        Debug.Log("Message: " + message);
-        float movement = 0;
-        switch(message) {
-            case "left":
-                movement = position.x - speed;
-                break;
-            case "right":
-                movement = position.x + speed;
-                break;
-            case "a":
-                if (Time.timeScale == 0) {
-                    Time.timeScale = 1;
-                }
-                break;
-            default:
-                movement = position.x;
-                break;
+        float movement = position.x;
+        if (movingLeft) {
+            movement -= speed;
+        }
+        if (movingRight) {
+            movement += speed;
         }
         if (movement <= 2.5 && movement >= -2.5){
             position.x = movement;
             transform.position = position;
         }
-        
+    }
+
+    void Message(string message)
+    {
+        Debug.Log("Message: " + message);
+        if (message.Equals("a")) {
+            Time.timeScale = 1;
+        }
+        movingLeft = message.Equals("left_pressed");
+        movingRight = message.Equals("right_pressed");
     }
 
     void OnCollisionEnter2D(Collision2D collision){
