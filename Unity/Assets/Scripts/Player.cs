@@ -19,15 +19,13 @@ public class Player : MonoBehaviour
 
     void FixedUpdate()
     {
-        float movement = position.x;
         if (movingLeft) {
-            movement -= speed;
+            position.x -= speed;
         }
         if (movingRight) {
-            movement += speed;
+            position.x += speed;
         }
-        if (movement <= 2.5 && movement >= -2.5){
-            position.x = movement;
+        if (position.x <= 2.5 && position.x >= -2.5){
             transform.position = position;
         }
     }

@@ -2,7 +2,6 @@ import tkinter as tk
 import bluetooth as bt
 import sys
 import os
-import platform
 
 def connect():
     if socket != None:
@@ -50,24 +49,29 @@ def disconnect():
 
 def keydown(e):
     key = e.keysym.lower()
-    if key == 'up':
-        send('up')
-    elif key == 'down':
-        send('down')
-    elif key == 'left':
-        send('left')
-    elif key == 'right':
-        send('right')
-    elif key == 'a':
-        send('a')
-    elif key == 'b':
-        send('b')
+    message = key + "_pressed"
+    send(message)
+
+def keyup(e):
+    key = e.keysym.lower()
+    message = key + "_released"
+    send(message)
+
+def close():
+    disconnect()
+    os.system('xset r on')
+    window.destroy()
 
 if __name__ == '__main__':
     socket = None
+    os.system("xset r off")
     window = tk.Tk()
     window.title("Bluetooth controller")
     window.geometry("120x120")
+    window.bind('<KeyPress>', keydown)
+    window.bind('<KeyRelease>', keyup)
+    window.protocol('WM_DELETE_WINDOW', close)
+    
     btns = {
             "up": tk.Button(window, text="↑", state=tk.DISABLED, command=lambda:send('up')),
             "down": tk.Button(window, text="↓", state=tk.DISABLED, command=lambda:send('down')),
@@ -77,8 +81,6 @@ if __name__ == '__main__':
             "b": tk.Button(window, text="B", state=tk.DISABLED, command=lambda:send('b')),
     }
 
-    window.bind('<KeyPress>', keydown)
- 
     btn_disconnect = tk.Button(window, text="x", command=disconnect)
     btn_connect = tk.Button(window, text="o", command=connect)
 
@@ -90,6 +92,6 @@ if __name__ == '__main__':
     btns["b"].grid(column=2,row=3)
     btn_disconnect.grid(column=0, row=4)
     btn_connect.grid(column=1, row=4)
-
+    
     window.mainloop()
 
