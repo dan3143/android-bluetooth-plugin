@@ -21,8 +21,28 @@ public class Bluetooth : MonoBehaviour {
         }
     }
 
-    public string test(){
-        return PluginInstance.Call<string>("test");
+    public bool IsEnabled {
+        get {
+            return PluginInstance.Call<bool>("isEnabled");
+        }
+    }
+
+    public string PlayerObject {
+        set {
+            PluginClass.CallStatic("setGameObject", value);
+        }
+        get {
+            return PluginClass.CallStatic<string>("getGameObject");
+        }
+    }
+
+    public string ServerObject {
+        set {
+            PluginClass.CallStatic("setServerObject", value);
+        }
+        get {
+            return PluginClass.CallStatic<string>("getServerObject");
+        }
     }
 
     public void start(){
@@ -33,24 +53,13 @@ public class Bluetooth : MonoBehaviour {
         PluginInstance.Call("stop");
     }
 
-    public bool isEnabled(){
-        return PluginInstance.Call<bool>("isEnabled");
+    public bool Enable() {
+        return PluginInstance.Call<bool>("enable");
     }
 
-    public void setGameObject(string name){
-        PluginClass.CallStatic("setGameObject", name);
+    public bool Disable() {
+        return PluginInstance.Call<bool>("disable");
     }
 
-    public string getGameObject(){
-        return PluginClass.CallStatic<string>("getGameObject");
-    }
-
-    public void setServerObject(string name){
-        PluginClass.CallStatic("setServerObject", name);
-    }
-
-    public string getServerObject(){
-        return PluginClass.CallStatic<string>("getServerObject");
-    }
-
+    
 }

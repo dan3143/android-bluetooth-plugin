@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">GenericBluetooth</string>
+    <string name="start">Start server</string>
 </resources>

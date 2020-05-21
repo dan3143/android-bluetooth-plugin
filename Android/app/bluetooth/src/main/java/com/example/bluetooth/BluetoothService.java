@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-public class BluetoothService{
+public class BluetoothService {
 
     private static BluetoothService instance;
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -56,34 +56,54 @@ public class BluetoothService{
     public static class BluetoothBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals(BluetoothAdapter.STATE_DISCONNECTED)){
-                state = STATE_NONE;
-                UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "status:disconnected");
-            }
-            if (intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
-                UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "status:"+intent.getStringExtra("EXTRA_STATE"));
+            String action = intent.getAction();
+            int state = intent.getExtras().getInt(BluetoothAdapter.EXTRA_STATE);
+            switch (state) {
+                case BluetoothAdapter.STATE_CONNECTED:
+                    send(serverObject, "bluetooth:connected");
+                    break;
+                case BluetoothAdapter.STATE_DISCONNECTED:
+                    send(serverObject, "bluetooth:disconnected");
+                    break;
+                case BluetoothAdapter.STATE_ON:
+                    send(serverObject, "bluetooth:on");
+                    break;
+                case BluetoothAdapter.STATE_OFF:
+                    send(serverObject, "bluetooth:off");
+                    break;
             }
         }
     }
 
-    private boolean isEnabled;
-    private boolean isAvailable;
     private BluetoothAdapter btAdapter;
     private AcceptThread acceptThread;
     private ConnectThread connectThread;
     private ConnectedThread connectedThread;
     private static int state;
+    private static boolean runningUnity = true;
 
-    private BluetoothService() {
-        btAdapter = BluetoothAdapter.getDefaultAdapter();
-        isAvailable = btAdapter != null;
-        isEnabled = isAvailable && btAdapter.isEnabled();
-        state = STATE_NONE;
-        gameObject = "BluetoothObject";
-    }
 
     public static synchronized int getState(){
         return state;
+    }
+
+    public static void setUnity(boolean value) {
+        runningUnity = value;
+    }
+
+    public static boolean isUnity() {
+        return runningUnity;
+    }
+
+    public static void send(String to, String message) {
+        if (runningUnity)
+            UnityPlayer.UnitySendMessage(to, BT_MESSAGE, message);
+    }
+
+    private BluetoothService() {
+        btAdapter = BluetoothAdapter.getDefaultAdapter();
+        state = STATE_NONE;
+        gameObject = "BluetoothObject";
     }
 
     public List<BluetoothDevice> getBondedDevices() {
@@ -91,14 +111,11 @@ public class BluetoothService{
     }
 
     public boolean isEnabled() {
-        return isEnabled;
-    }
-
-    public boolean isAvailable() {
-        return isAvailable;
+        return btAdapter.isEnabled();
     }
 
     public boolean enable() {
+        Log.i(TAG, "Bluetooth enabled");
         return btAdapter.enable();
     }
 
@@ -157,7 +174,7 @@ public class BluetoothService{
             acceptThread = null;
         }
 
-        UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "status:server stopped");
+        send(serverObject, "server:stopped");
         state = STATE_NONE;
     }
 
@@ -191,7 +208,7 @@ public class BluetoothService{
         public AcceptThread() {
             try{
                 serverSocket = btAdapter.listenUsingRfcommWithServiceRecord("CONTROLLER", MY_UUID);
-                UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "status:listening");
+                send(serverObject, "server:listening");
                 state = STATE_LISTENING;
             } catch (IOException ex){
                 Log.e(TAG, "Could not open socket", ex);
@@ -214,7 +231,7 @@ public class BluetoothService{
                             case STATE_LISTENING:
                             case STATE_CONNECTING:
                                 connected(socket.getRemoteDevice(), socket);
-                                UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "connected:"+socket.getRemoteDevice());
+                                send(serverObject, "server:connected:"+socket.getRemoteDevice());
                                 break;
                             case STATE_NONE:
                             case STATE_CONNECTED:
@@ -267,7 +284,7 @@ public class BluetoothService{
                 try{
                     bytes = inputStream.read(buffer);
                     String message = new String(buffer, 0, bytes);
-                    UnityPlayer.UnitySendMessage(gameObject, BT_MESSAGE, message);
+                    send(gameObject, message);
                     Log.i(TAG, message);
                 }catch (IOException e){
                     Log.e(TAG, "Could not read", e);

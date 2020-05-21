@@ -1,15 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.bluetooth" >
+    package="com.example.bluetooth">
+
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
     <application>
-        <receiver
-            android:name="com.example.bluetooth.BluetoothService$BluetoothBroadcastReceiver">
+        <receiver android:name=".BluetoothService$BluetoothBroadcastReceiver">
             <intent-filter>
-                <action android:name="android.bluetooth.device.action.ACL_CONNECTED"/>
-                <action android:name="android.bluetooth.device.action.ACL_DISCONNECT_REQUESTED"/>
-                <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED"/>
-                <action android:name="android.bluetooth.device.action.STATE_CHANGED"/>
+                <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
+                <action android:name="android.bluetooth.device.action.ACL_DISCONNECT_REQUESTED" />
+                <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED" />
+                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
             </intent-filter>
         </receiver>
     </application>
