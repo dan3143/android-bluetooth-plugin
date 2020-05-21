@@ -59,18 +59,19 @@ public class BluetoothService {
             String action = intent.getAction();
             int state = intent.getExtras().getInt(BluetoothAdapter.EXTRA_STATE);
             switch (state) {
-                case BluetoothAdapter.STATE_CONNECTED:
-                    send(serverObject, "bluetooth:connected");
-                    break;
-                case BluetoothAdapter.STATE_DISCONNECTED:
-                    send(serverObject, "bluetooth:disconnected");
-                    break;
                 case BluetoothAdapter.STATE_ON:
-                    send(serverObject, "bluetooth:on");
+                    send(serverObject, "bluetooth.on");
                     break;
                 case BluetoothAdapter.STATE_OFF:
-                    send(serverObject, "bluetooth:off");
+                    send(serverObject, "bluetooth.off");
                     break;
+            }
+
+            if (action.equals("android.bluetooth.device.action.ACL_CONNECTED")) {
+                send(serverObject, "bluetooth.connected");
+            }
+            if (action.equals("android.bluetooth.device.action.ACL_DISCONNECTED")) {
+                send(serverObject, "bluetooth.disconnected");
             }
         }
     }
@@ -174,7 +175,7 @@ public class BluetoothService {
             acceptThread = null;
         }
 
-        send(serverObject, "server:stopped");
+        send(serverObject, "server.stopped");
         state = STATE_NONE;
     }
 
@@ -208,7 +209,7 @@ public class BluetoothService {
         public AcceptThread() {
             try{
                 serverSocket = btAdapter.listenUsingRfcommWithServiceRecord("CONTROLLER", MY_UUID);
-                send(serverObject, "server:listening");
+                send(serverObject, "server.listening");
                 state = STATE_LISTENING;
             } catch (IOException ex){
                 Log.e(TAG, "Could not open socket", ex);
@@ -231,7 +232,7 @@ public class BluetoothService {
                             case STATE_LISTENING:
                             case STATE_CONNECTING:
                                 connected(socket.getRemoteDevice(), socket);
-                                send(serverObject, "server:connected:"+socket.getRemoteDevice());
+                                send(serverObject, "server.connected."+socket.getRemoteDevice());
                                 break;
                             case STATE_NONE:
                             case STATE_CONNECTED:

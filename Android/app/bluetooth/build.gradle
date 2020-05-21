@@ -38,6 +38,6 @@ dependencies {
 task copyPlugin(type: Copy) {
     dependsOn assemble
     from('build/outputs/aar')
-    into('/home/vdguevara/Proyectos/VIP/Unity/Assets/Plugins/Android')
+    into('../../../../../../Plugin/')
     include(project.name + '-release.aar')
 }
