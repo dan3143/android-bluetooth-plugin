@@ -34,9 +34,9 @@ dependencies {
     implementation project(path: ':classes')
 }
 
-task copyPlugin(type: Copy){
+task copyPlugin(type: Copy) {
     dependsOn assemble
     from ('build/outputs/aar')
-    into('/home/vdguevara/Proyectos/Unity/Bluetooth/Assets/Plugins/Android')
+    into('/home/vdguevara/Proyectos/VIP/Unity/Assets/Plugins/Android')
     include(project.name + '-release.aar')
 }

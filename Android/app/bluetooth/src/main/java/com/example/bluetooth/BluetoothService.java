@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-
 public class BluetoothService{
 
     private static BluetoothService instance;
@@ -57,11 +56,12 @@ public class BluetoothService{
     public static class BluetoothBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.i(TAG, "Intent action: " + intent.getAction());
-            Log.i(TAG, "Intent data string: " + intent.getDataString());
-            if (intent.getAction().equals("android.bluetooth.device.action.ACL_DISCONNECTED")){
+            if (intent.getAction().equals(BluetoothAdapter.STATE_DISCONNECTED)){
                 state = STATE_NONE;
-                UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "socket_disconnected");
+                UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "status:disconnected");
+            }
+            if (intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+                UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "status:"+intent.getStringExtra("EXTRA_STATE"));
             }
         }
     }
@@ -98,6 +98,14 @@ public class BluetoothService{
         return isAvailable;
     }
 
+    public boolean enable() {
+        return btAdapter.enable();
+    }
+
+    public boolean disable() {
+        return btAdapter.disable();
+    }
+
     private void connected(BluetoothDevice device, BluetoothSocket socket){
         if (acceptThread != null){
             acceptThread.cancel();
@@ -117,14 +125,14 @@ public class BluetoothService{
     }
 
     public synchronized void connect(BluetoothDevice device) {
-        if (state == STATE_CONNECTING){
-            if (connectThread != null){
+        if (state == STATE_CONNECTING) {
+            if (connectThread != null) {
                 connectThread.cancel();
                 connectThread = null;
             }
         }
 
-        if (connectedThread != null){
+        if (connectedThread != null) {
             connectedThread.cancel();
             connectedThread = null;
         }
@@ -139,17 +147,17 @@ public class BluetoothService{
             connectThread = null;
         }
 
-        if (connectedThread != null){
+        if (connectedThread != null) {
             connectedThread.cancel();
             connectedThread = null;
         }
 
-        if (acceptThread != null){
+        if (acceptThread != null) {
             acceptThread.cancel();
             acceptThread = null;
         }
 
-        UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "server stopped");
+        UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "status:server stopped");
         state = STATE_NONE;
     }
 
@@ -183,7 +191,7 @@ public class BluetoothService{
         public AcceptThread() {
             try{
                 serverSocket = btAdapter.listenUsingRfcommWithServiceRecord("CONTROLLER", MY_UUID);
-                UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "listening");
+                UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "status:listening");
                 state = STATE_LISTENING;
             } catch (IOException ex){
                 Log.e(TAG, "Could not open socket", ex);
@@ -207,7 +215,6 @@ public class BluetoothService{
                             case STATE_CONNECTING:
                                 connected(socket.getRemoteDevice(), socket);
                                 UnityPlayer.UnitySendMessage(serverObject, BT_MESSAGE, "connected:"+socket.getRemoteDevice());
-                                Log.i(TAG, "Connected to " + socket.getRemoteDevice());
                                 break;
                             case STATE_NONE:
                             case STATE_CONNECTED:
