@@ -9,7 +9,6 @@ android {
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
     }
@@ -38,6 +37,6 @@ dependencies {
 task copyPlugin(type: Copy) {
     dependsOn assemble
     from('build/outputs/aar')
-    into('../../../../../../Plugin/')
+    into('../../../Plugin')
     include(project.name + '-release.aar')
 }

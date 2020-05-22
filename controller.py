@@ -12,8 +12,7 @@ def connect():
     if (len(services) == 0):
         print("Could not find service")
     else:
-        service = services[0]
-    
+        service = services[0]    
         port = service["port"]
         name = service["name"]
         host = service["host"]
@@ -33,6 +32,7 @@ def send(message):
     if socket != None:
         try:
             socket.send(message)
+            print("'"+message+"' sent")
         except:
             disconnect()
 

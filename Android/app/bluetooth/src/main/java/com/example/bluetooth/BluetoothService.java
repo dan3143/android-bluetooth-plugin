@@ -232,7 +232,7 @@ public class BluetoothService {
                             case STATE_LISTENING:
                             case STATE_CONNECTING:
                                 connected(socket.getRemoteDevice(), socket);
-                                send(serverObject, "server.connected."+socket.getRemoteDevice());
+                                send(serverObject, "server.connected."+socket.getRemoteDevice().getName());
                                 break;
                             case STATE_NONE:
                             case STATE_CONNECTED:
