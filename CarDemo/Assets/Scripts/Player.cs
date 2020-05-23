@@ -33,7 +33,7 @@ public class Player : MonoBehaviour
     void Message(string message)
     {
         Debug.Log("Message: " + message);
-        if (message.Equals("a")) {
+        if (message.Equals("a") || message.Equals("a_pressed")) {
             Time.timeScale = 1;
         }
         movingLeft = message.Equals("left_pressed");
