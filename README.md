@@ -1,7 +1,7 @@
 ﻿# Bluetooth for Unity
 This is a plugin for Unity that enables Bluetooth communication for Android devices.
 ## How to use
-Just copy `Bluetooth.cs`, `BluetoothService.cs` and `bluetooth-release.arr` into your project. Then, create a GameObject and attach `BluetoothService.cs` into it.
+Just import `android-bluetooth-plugin.unitypackage` into your project, then create a GameObject and attach `BluetoothService.cs` onto it.
 
 With `BluetoothService.Bluetooth.PlayerObject = "gameobject"`, *gameobject* will receive data through Bluetooth, and you can access this data by creating a method called Message, like this:
 
