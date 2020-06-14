@@ -21,15 +21,38 @@ import java.util.UUID;
 
 public class BluetoothService {
 
-    private static BluetoothService instance;
-    private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    private static final String TAG = "BluetoothManager-Plugin";
-    public static final int STATE_NONE = 0;
-    public static final int STATE_LISTENING = 1;
-    public static final int STATE_CONNECTING = 2;
-    public static final int STATE_CONNECTED = 3;
+    public static class BluetoothBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            int state = intent.getExtras().getInt(BluetoothAdapter.EXTRA_STATE);
+            switch (state) {
+                case BluetoothAdapter.STATE_ON:
+                    send(serverObject, "bluetooth.on");
+                    break;
+                case BluetoothAdapter.STATE_OFF:
+                    send(serverObject, "bluetooth.off");
+                    break;
+            }
 
-    public static final String BT_MESSAGE = "Message";
+            if (action != null && action.equals("android.bluetooth.device.action.ACL_CONNECTED")) {
+                send(serverObject, "bluetooth.connected");
+            }
+            if (action != null && action.equals("android.bluetooth.device.action.ACL_DISCONNECTED")) {
+                send(serverObject, "bluetooth.disconnected");
+            }
+        }
+    }
+
+    private static BluetoothService instance;
+    private static final String SERIAL_UUID = "00001101-0000-1000-8000-00805F9B34FB";
+    private static final String TAG = "BluetoothManager-Plugin";
+    private static final int STATE_NONE = 0;
+    private static final int STATE_LISTENING = 1;
+    private static final int STATE_CONNECTING = 2;
+    private static final int STATE_CONNECTED = 3;
+
+    private static final String BT_MESSAGE = "Message";
     private static String gameObject;
     private static String serverObject;
 
@@ -53,36 +76,12 @@ public class BluetoothService {
         return serverObject;
     }
 
-    public static class BluetoothBroadcastReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            int state = intent.getExtras().getInt(BluetoothAdapter.EXTRA_STATE);
-            switch (state) {
-                case BluetoothAdapter.STATE_ON:
-                    send(serverObject, "bluetooth.on");
-                    break;
-                case BluetoothAdapter.STATE_OFF:
-                    send(serverObject, "bluetooth.off");
-                    break;
-            }
-
-            if (action.equals("android.bluetooth.device.action.ACL_CONNECTED")) {
-                send(serverObject, "bluetooth.connected");
-            }
-            if (action.equals("android.bluetooth.device.action.ACL_DISCONNECTED")) {
-                send(serverObject, "bluetooth.disconnected");
-            }
-        }
-    }
-
     private BluetoothAdapter btAdapter;
     private AcceptThread acceptThread;
     private ConnectThread connectThread;
     private ConnectedThread connectedThread;
     private static int state;
     private static boolean runningUnity = true;
-
 
     public static synchronized int getState(){
         return state;
@@ -96,7 +95,7 @@ public class BluetoothService {
         return runningUnity;
     }
 
-    public static void send(String to, String message) {
+    private static void send(String to, String message) {
         if (runningUnity)
             UnityPlayer.UnitySendMessage(to, BT_MESSAGE, message);
     }
@@ -115,6 +114,10 @@ public class BluetoothService {
         return btAdapter.isEnabled();
     }
 
+    public boolean isListening() { return state == STATE_LISTENING; }
+
+    public boolean isConnected() { return state == STATE_CONNECTED; }
+
     public boolean enable() {
         Log.i(TAG, "Bluetooth enabled");
         return btAdapter.enable();
@@ -124,25 +127,17 @@ public class BluetoothService {
         return btAdapter.disable();
     }
 
-    private void connected(BluetoothDevice device, BluetoothSocket socket){
-        if (acceptThread != null){
-            acceptThread.cancel();
-            acceptThread = null;
+    public void write(String data) {
+        if (state == STATE_CONNECTED && connectedThread != null) {
+            connectedThread.write(data.getBytes());
         }
-        if (connectThread != null) {
-            connectThread.cancel();
-            connectThread = null;
-        }
-        if (connectedThread != null) {
-            connectedThread.cancel();
-            connectedThread = null;
-        }
-
-        connectedThread = new ConnectedThread(socket);
-        connectedThread.start();
     }
 
     public synchronized void connect(BluetoothDevice device) {
+        connect(device, SERIAL_UUID);
+    }
+
+    public synchronized void connect(BluetoothDevice device, String uuid) {
         if (state == STATE_CONNECTING) {
             if (connectThread != null) {
                 connectThread.cancel();
@@ -155,31 +150,19 @@ public class BluetoothService {
             connectedThread = null;
         }
 
-        connectThread = new ConnectThread(device);
+        connectThread = new ConnectThread(device, uuid);
         connectThread.start();
     }
 
-    public synchronized void stop() {
-        if (connectThread != null){
-            connectThread.cancel();
-            connectThread = null;
-        }
-
-        if (connectedThread != null) {
-            connectedThread.cancel();
-            connectedThread = null;
-        }
-
-        if (acceptThread != null) {
-            acceptThread.cancel();
-            acceptThread = null;
-        }
-
-        send(serverObject, "server.stopped");
-        state = STATE_NONE;
+    public void startServer() {
+        startServer(SERIAL_UUID, "Serial port");
     }
 
-    public void start(){
+    public void startServer(String name) {
+        startServer(name, SERIAL_UUID);
+    }
+
+    public synchronized void startServer(String name, String uuid) {
 
         if (connectThread != null){
             connectThread.cancel();
@@ -198,17 +181,55 @@ public class BluetoothService {
         }
 
         Log.i(TAG, "Starting server");
-        acceptThread = new AcceptThread();
+        acceptThread = new AcceptThread(name, uuid);
         acceptThread.start();
+    }
+
+    public synchronized void stopServer() {
+        if (connectThread != null){
+            connectThread.cancel();
+            connectThread = null;
+        }
+
+        if (connectedThread != null) {
+            connectedThread.cancel();
+            connectedThread = null;
+        }
+
+        if (acceptThread != null) {
+            acceptThread.cancel();
+            acceptThread = null;
+        }
+        Log.i(TAG, "Server stopped");
+        send(serverObject, "server.stopped");
+        state = STATE_NONE;
+    }
+
+    private void connected(BluetoothDevice device, BluetoothSocket socket) {
+        if (acceptThread != null){
+            acceptThread.cancel();
+            acceptThread = null;
+        }
+        if (connectThread != null) {
+            connectThread.cancel();
+            connectThread = null;
+        }
+        if (connectedThread != null) {
+            connectedThread.cancel();
+            connectedThread = null;
+        }
+
+        connectedThread = new ConnectedThread(socket);
+        connectedThread.start();
     }
 
     private class AcceptThread extends Thread {
 
         private BluetoothServerSocket serverSocket;
 
-        public AcceptThread() {
+        AcceptThread(String name, String uuidStr) {
             try{
-                serverSocket = btAdapter.listenUsingRfcommWithServiceRecord("CONTROLLER", MY_UUID);
+                serverSocket = btAdapter.listenUsingRfcommWithServiceRecord(name, UUID.fromString(uuidStr));
                 send(serverObject, "server.listening");
                 state = STATE_LISTENING;
             } catch (IOException ex){
@@ -222,6 +243,7 @@ public class BluetoothService {
                 try {
                     socket = serverSocket.accept();
                 } catch (IOException ex) {
+                    send(serverObject, "server.failed_connection");
                     Log.e(TAG, "Socket's accept() method failed", ex);
                     break;
                 }
@@ -232,7 +254,7 @@ public class BluetoothService {
                             case STATE_LISTENING:
                             case STATE_CONNECTING:
                                 connected(socket.getRemoteDevice(), socket);
-                                send(serverObject, "server.connected."+socket.getRemoteDevice().getName());
+                                send(serverObject,  "server.connected."+socket.getRemoteDevice().getAddress());
                                 break;
                             case STATE_NONE:
                             case STATE_CONNECTED:
@@ -244,7 +266,7 @@ public class BluetoothService {
             }
         }
 
-        public void cancel(){
+        void cancel(){
             try {
                 Log.i(TAG,"Closing server socket");
                 serverSocket.close();
@@ -255,12 +277,12 @@ public class BluetoothService {
 
     }
 
-    private class ConnectedThread extends Thread {
+    private static class ConnectedThread extends Thread {
         private final BluetoothSocket socket;
         private final InputStream inputStream;
         private final OutputStream outputStream;
 
-        public ConnectedThread(BluetoothSocket socket){
+        ConnectedThread(BluetoothSocket socket){
             this.socket = socket;
             InputStream tmpI = null;
             OutputStream tmpO = null;
@@ -278,7 +300,7 @@ public class BluetoothService {
         }
 
         public void run() {
-            byte buffer[] = new byte[1024];
+            byte[] buffer = new byte[1024];
             int bytes;
             Log.i(TAG, "State: " + state);
             while (socket.isConnected()) {
@@ -295,7 +317,7 @@ public class BluetoothService {
             }
         }
 
-        public void write(byte[] buffer){
+        void write(byte[] buffer){
             try{
                 outputStream.write(buffer);
             }catch (IOException e){
@@ -304,13 +326,11 @@ public class BluetoothService {
             }
         }
 
-        public void cancel(){
+        void cancel(){
             try {
-                Log.i(TAG, "Cancelling connected");
                 inputStream.close();
                 outputStream.close();
                 socket.close();
-                state = STATE_NONE;
             }catch (IOException e){
                 Log.e(TAG, "Could not close", e);
             }
@@ -321,12 +341,10 @@ public class BluetoothService {
         private BluetoothSocket socket;
         private BluetoothDevice device;
 
-        public ConnectThread(BluetoothDevice device){
+        ConnectThread(BluetoothDevice device, String uuid){
             this.device = device;
-            BluetoothSocket tmp = null;
             try{
-                Log.i(TAG, "UUIDs: " + Arrays.toString(device.getUuids()));
-                socket = this.device.createRfcommSocketToServiceRecord(device.getUuids()[3].getUuid());
+                socket = this.device.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
             }catch(IOException e) {
                 Log.e(TAG, "Socket creation failed");
             }
@@ -346,7 +364,7 @@ public class BluetoothService {
             connected(device, socket);
         }
 
-        public void cancel(){
+        void cancel(){
             try{
                 Log.i(TAG, "Cancelling connect");
                 socket.close();
@@ -355,4 +373,5 @@ public class BluetoothService {
             }
         }
     }
+
 }

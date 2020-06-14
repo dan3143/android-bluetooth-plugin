@@ -24,8 +24,16 @@ public class Bluetooth {
         }
     }
 
-    public void Start(){
+    public void Start() {
         PluginInstance.Call("start");
+    }
+
+    public void Start(string name) {
+        PluginInstance.Call("start", name);
+    }
+
+    public void Start(string name, string uuid) {
+        PluginInstance.Call("start", uuid);
     }
 
     public void Stop(){
@@ -43,6 +51,18 @@ public class Bluetooth {
     public bool IsEnabled {
         get {
             return PluginInstance.Call<bool>("isEnabled");
+        }
+    }
+
+    public bool IsConnected {
+        get {
+            return PluginInstance.Call<bool>("isConnected");
+        }
+    }
+
+    public bool IsListening {
+        get {
+            return PluginInstance.Call<bool>("isListening");
         }
     }
 
