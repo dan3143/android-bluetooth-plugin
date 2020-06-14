@@ -25,19 +25,23 @@ public class Bluetooth {
     }
 
     public void Start() {
-        PluginInstance.Call("start");
+        PluginInstance.Call("startServer");
     }
 
     public void Start(string name) {
-        PluginInstance.Call("start", name);
+        PluginInstance.Call("startServer", name);
     }
 
     public void Start(string name, string uuid) {
-        PluginInstance.Call("start", uuid);
+        PluginInstance.Call("startServer", name, uuid);
     }
 
     public void Stop(){
-        PluginInstance.Call("stop");
+        PluginInstance.Call("stopServer");
+    }
+
+    public void Write(string data) {
+        PluginInstance.Call("write", data);
     }
 
     public bool Enable() {
