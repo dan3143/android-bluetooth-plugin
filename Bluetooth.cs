@@ -1,10 +1,24 @@
 ﻿using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 
+public struct BluetoothDevice {
+    public string name;
+    public string address;
+}
 
-public class Bluetooth {
+public abstract class Bluetooth {
+    public const string COULD_NOT_READ = "socket.error.COULD_NOT_READ";
+    public const string COULD_NOT_WRITE = "socket.error.COULD_NOT_WRITE";
+    public const string SOCKET_CONNECTED = "socket.connected";
+    public const string ON = "bluetooth.on";
+    public const string OFF = "bluetooth.off";
+
     const string pluginName = "com.example.bluetooth.BluetoothService";
     private static AndroidJavaClass _pluginClass;
     private static AndroidJavaObject _pluginInstance;
+    public static List<BluetoothDevice> foundDevices;
+    
     
     public static AndroidJavaClass PluginClass {
         get {
@@ -18,38 +32,59 @@ public class Bluetooth {
     public static AndroidJavaObject PluginInstance {
         get {
             if (_pluginInstance == null){
-                _pluginInstance = PluginClass.CallStatic<AndroidJavaObject>("getInstance");
+                _pluginInstance = PluginClass.CallStatic<AndroidJavaObject>("createInstance");
             }
             return _pluginInstance;
         }
     }
 
-    public void Start() {
-        PluginInstance.Call("startServer");
-    }
-
-    public void Start(string name) {
-        PluginInstance.Call("startServer", name);
-    }
-
-    public void Start(string name, string uuid) {
-        PluginInstance.Call("startServer", name, uuid);
-    }
-
     public void Stop(){
-        PluginInstance.Call("stopServer");
+        PluginInstance.Call("stop");
     }
 
     public void Write(string data) {
         PluginInstance.Call("write", data);
     }
 
-    public bool Enable() {
-        return PluginInstance.Call<bool>("enable");
+    public static bool Enable() {
+        return PluginClass.CallStatic<bool>("enableAdapter");
     }
 
-    public bool Disable() {
-        return PluginInstance.Call<bool>("disable");
+    public static bool Disable() {
+        return PluginClass.CallStatic<bool>("disableAdapter");
+    }
+
+    public static void SearchDevices() {
+        PluginClass.CallStatic("searchDevices");
+    }
+
+    private static List<BluetoothDevice> getDevices(int type) {
+        AndroidJavaObject array;
+        if (type == 0) {
+            array = PluginClass.CallStatic<AndroidJavaObject>("u_getBondedDevices");
+        } else {
+            array = PluginClass.CallStatic<AndroidJavaObject>("u_getDiscoveredDevices");
+        }
+        List<BluetoothDevice> bondedDevices = new List<BluetoothDevice>();
+        if (array.GetRawObject().ToInt32() != 0) {
+            string[] devices = AndroidJNIHelper.ConvertFromJNIArray<string[]>(array.GetRawObject());
+            foreach(string device in devices) {
+                string[] tokens = device.Split(',');
+                BluetoothDevice dev;
+                dev.address = tokens[0];
+                dev.name = tokens[1];
+                bondedDevices.Add(dev);
+            }
+        }
+        return bondedDevices;
+    }
+
+    public static List<BluetoothDevice> getBondedDevices() {
+        return getDevices(0);
+    }
+
+    public static List<BluetoothDevice> getDiscoveredDevices() {
+        return getDevices(1);
     }
 
     public bool IsEnabled {
@@ -64,26 +99,25 @@ public class Bluetooth {
         }
     }
 
-    public bool IsListening {
+    public string PlayerObject {
+        set {
+            PluginInstance.Call("setGameObject", value);    
+        }
         get {
-            return PluginInstance.Call<bool>("isListening");
+            return PluginInstance.Call<string>("getGameObject");    
         }
     }
 
-    public string PlayerObject {
-        set {
-            PluginClass.CallStatic("setGameObject", value);    
-        }
-        get {
-            return PluginClass.CallStatic<string>("getGameObject");    
-        }
+    public string DefaultUUID {
+        get { return PluginClass.CallStatic<string>("getSerialUUID"); }
     }
+
     public string ServerObject {
         set {
-            PluginClass.CallStatic("setServerObject", value);    
+            PluginInstance.Call("setServerObject", value);    
         }
         get {
-            return PluginClass.CallStatic<string>("getServerObject");    
+            return PluginInstance.Call<string>("getServerObject");    
         }
     }
 

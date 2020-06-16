@@ -2,4 +2,6 @@
     <string name="app_name">GenericBluetooth</string>
     <string name="start">Start server</string>
     <string name="send">Send</string>
+    <string name="server">Server</string>
+    <string name="client">Client</string>
 </resources>

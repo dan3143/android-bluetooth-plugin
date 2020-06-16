@@ -37,6 +37,6 @@ dependencies {
 task copyPlugin(type: Copy) {
     dependsOn assemble
     from('build/outputs/aar')
-    into('../../../')
+    into('../../../../')
     include(project.name + '-release.aar')
 }
