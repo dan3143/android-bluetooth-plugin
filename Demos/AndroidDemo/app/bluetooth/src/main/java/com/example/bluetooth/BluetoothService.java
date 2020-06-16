@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.util.Log;
 
 import com.unity3d.player.UnityPlayer;
@@ -221,7 +222,7 @@ public class BluetoothService {
     private static final String BT_MESSAGE = "OnMessage";
     private static boolean runningUnity = true;
     private static List<BluetoothDevice> foundDevices;
-    private static BluetoothAdapter btAdapter;
+    private static BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
     public static void setUnity(boolean value) {
         runningUnity = value;
@@ -244,8 +245,8 @@ public class BluetoothService {
         return SERIAL_UUID;
     }
 
-    public static BluetoothService createInstance(){
-        return new BluetoothService();
+    public static BluetoothService createInstance(Context context){
+        return new BluetoothService(context);
     }
 
     public static void searchDevices() {
@@ -280,11 +281,24 @@ public class BluetoothService {
     private ConnectedThread connectedThread;
     private String gameObject;
     private String serverObject;
+    private Context context;
 
-    public BluetoothService() {
-        btAdapter = BluetoothAdapter.getDefaultAdapter();
+    public BluetoothService(Context context) {
+        this.context = context;
         state = STATE_NONE;
         gameObject = "BluetoothObject";
+        serverObject = gameObject;
+        registerIntent(context);
+    }
+
+    private void registerIntent(Context context)
+    {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        context.registerReceiver(new BluetoothBroadcastReceiver(), filter);
     }
 
     public String getGameObject(){

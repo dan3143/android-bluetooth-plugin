@@ -87,9 +87,9 @@ public abstract class Bluetooth {
         return getDevices(1);
     }
 
-    public bool IsEnabled {
+    public bool IsBluetoothEnabled {
         get {
-            return PluginInstance.Call<bool>("isEnabled");
+            return PluginClass.CallStatic<bool>("isEnabled");
         }
     }
 

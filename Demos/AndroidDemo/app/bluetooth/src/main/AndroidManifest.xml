@@ -7,14 +7,6 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application>
-        <receiver android:name=".BluetoothService$BluetoothBroadcastReceiver">
-            <intent-filter>
-                <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
-                <action android:name="android.bluetooth.device.action.ACL_DISCONNECT_REQUESTED" />
-                <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED" />
-                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
-                <action android:name="android.bluetooth.device.action.FOUND"/>
-            </intent-filter>
-        </receiver>
+
     </application>
 </manifest>
