@@ -11,14 +11,16 @@ public abstract class Bluetooth {
     public const string COULD_NOT_READ = "socket.error.COULD_NOT_READ";
     public const string COULD_NOT_WRITE = "socket.error.COULD_NOT_WRITE";
     public const string SOCKET_CONNECTED = "socket.connected";
+    public const string MODE_DISCOVERABLE = "bluetooth.mode.discoverable";
+    public const string MODE_CONNECTABLE = "bluetooth.mode.connectable";
+    public const string MODE_NONE = "bluetooth.mode.none";
     public const string ON = "bluetooth.on";
     public const string OFF = "bluetooth.off";
 
     const string pluginName = "com.example.bluetooth.BluetoothService";
-    private static AndroidJavaClass _pluginClass;
-    private static AndroidJavaObject _pluginInstance;
+    protected static AndroidJavaClass _pluginClass;
+    protected AndroidJavaObject _pluginInstance;
     public static List<BluetoothDevice> foundDevices;
-    
     
     public static AndroidJavaClass PluginClass {
         get {
@@ -29,10 +31,12 @@ public abstract class Bluetooth {
         }
     }
 
-    public static AndroidJavaObject PluginInstance {
+    public AndroidJavaObject PluginInstance {
         get {
             if (_pluginInstance == null){
-                _pluginInstance = PluginClass.CallStatic<AndroidJavaObject>("createInstance");
+                AndroidJavaClass jc = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                AndroidJavaObject activity = jc.GetStatic<AndroidJavaObject>("currentActivity");
+                _pluginInstance = PluginClass.CallStatic<AndroidJavaObject>("createInstance", activity);
             }
             return _pluginInstance;
         }
@@ -56,6 +60,14 @@ public abstract class Bluetooth {
 
     public static void SearchDevices() {
         PluginClass.CallStatic("searchDevices");
+    }
+
+    public static void requestEnableBluetooth() {
+        PluginClass.CallStatic("requestEnableBluetooth");
+    }
+
+    public static void requestEnableDiscoverability() {
+        PluginClass.CallStatic("requestEnableDiscoverability");
     }
 
     private static List<BluetoothDevice> getDevices(int type) {

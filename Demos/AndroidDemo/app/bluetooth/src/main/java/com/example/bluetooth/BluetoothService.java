@@ -238,11 +238,16 @@ public class BluetoothService {
     private static final int STATE_CONNECTED = 3;
     private static final String BT_MESSAGE = "OnMessage";
     private static boolean runningUnity = true;
+    private static Activity activity;
     private static List<BluetoothDevice> foundDevices;
     private static BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
     public static void setUnity(boolean value) {
         runningUnity = value;
+    }
+
+    public static void setActivity(Activity activity) {
+        BluetoothService.activity = activity;
     }
 
     public static boolean isUnity() {
@@ -263,7 +268,8 @@ public class BluetoothService {
     }
 
     public static BluetoothService createInstance(Activity activity){
-        return new BluetoothService(activity);
+        BluetoothService.activity = activity;
+        return new BluetoothService();
     }
 
     public static void searchDevices() {
@@ -298,10 +304,9 @@ public class BluetoothService {
     private ConnectedThread connectedThread;
     private String gameObject;
     private String serverObject;
-    private Activity activity;
 
-    public BluetoothService(Activity activity) {
-        this.activity = activity;
+
+    public BluetoothService() {
         state = STATE_NONE;
         gameObject = "BluetoothObject";
         serverObject = gameObject;
@@ -320,14 +325,14 @@ public class BluetoothService {
     public boolean isListening() { return state == STATE_LISTENING; }
     public boolean isConnected() { return state == STATE_CONNECTED; }
 
-    public void requestEnableBluetooth() {
+    public static void requestEnableBluetooth() {
         if (!btAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            this.activity.startActivityForResult(enableBtIntent, 1);
+            activity.startActivityForResult(enableBtIntent, 1);
         }
     }
 
-    public void requestEnableDiscoverability() {
+    public static void requestEnableDiscoverability() {
         Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
         activity.startActivity(discoverableIntent);
