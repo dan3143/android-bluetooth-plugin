@@ -25,7 +25,7 @@ public class Test extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
         BluetoothService.setUnity(false);
-        BluetoothService bt = new BluetoothService(this.getApplicationContext());
+        BluetoothService bt = new BluetoothService(this);
 
         // Client
         Spinner spinner = findViewById(R.id.device_spinner);

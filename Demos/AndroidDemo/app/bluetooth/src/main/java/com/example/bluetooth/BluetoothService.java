@@ -1,5 +1,6 @@
 package com.example.bluetooth;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
@@ -198,6 +199,22 @@ public class BluetoothService {
                 }
             }
 
+            if (BluetoothAdapter.ACTION_SCAN_MODE_CHANGED.equals(action)) {
+                int state = intent.getExtras().getInt(BluetoothAdapter.EXTRA_SCAN_MODE);
+                switch (state) {
+                    case BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE:
+                        send(serverObject, "bluetooth.mode.discoverable");
+                        break;
+                    case BluetoothAdapter.SCAN_MODE_CONNECTABLE:
+                        send(serverObject, "bluetooth.mode.connectable");
+                        break;
+                    case BluetoothAdapter.SCAN_MODE_NONE:
+                        send(serverObject, "bluetooth.mode.none");
+                        break;
+
+                }
+            }
+
             if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
                 send(serverObject, "bluetooth.connected");
             }
@@ -245,8 +262,8 @@ public class BluetoothService {
         return SERIAL_UUID;
     }
 
-    public static BluetoothService createInstance(Context context){
-        return new BluetoothService(context);
+    public static BluetoothService createInstance(Activity activity){
+        return new BluetoothService(activity);
     }
 
     public static void searchDevices() {
@@ -281,24 +298,14 @@ public class BluetoothService {
     private ConnectedThread connectedThread;
     private String gameObject;
     private String serverObject;
-    private Context context;
+    private Activity activity;
 
-    public BluetoothService(Context context) {
-        this.context = context;
+    public BluetoothService(Activity activity) {
+        this.activity = activity;
         state = STATE_NONE;
         gameObject = "BluetoothObject";
         serverObject = gameObject;
-        registerIntent(context);
-    }
-
-    private void registerIntent(Context context)
-    {
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
-        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
-        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        context.registerReceiver(new BluetoothBroadcastReceiver(), filter);
+        registerIntent(activity);
     }
 
     public String getGameObject(){
@@ -312,6 +319,19 @@ public class BluetoothService {
     }
     public boolean isListening() { return state == STATE_LISTENING; }
     public boolean isConnected() { return state == STATE_CONNECTED; }
+
+    public void requestEnableBluetooth() {
+        if (!btAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            this.activity.startActivityForResult(enableBtIntent, 1);
+        }
+    }
+
+    public void requestEnableDiscoverability() {
+        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+        activity.startActivity(discoverableIntent);
+    }
 
     public void setGameObject(String name){
         gameObject = name;
@@ -410,6 +430,17 @@ public class BluetoothService {
 
         connectedThread = new ConnectedThread(socket);
         connectedThread.start();
+    }
+
+    private void registerIntent(Activity activity)
+    {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+        filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
+        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        activity.getApplication().getApplicationContext().registerReceiver(new BluetoothBroadcastReceiver(), filter);
     }
 
     /* ========== Unity Helper Methods ========== */
