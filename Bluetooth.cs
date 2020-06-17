@@ -22,7 +22,7 @@ public abstract class Bluetooth {
     protected AndroidJavaObject _pluginInstance;
     public static List<BluetoothDevice> foundDevices;
     
-    public static AndroidJavaClass PluginClass {
+    protected static AndroidJavaClass PluginClass {
         get {
             if (_pluginClass == null){
                 _pluginClass = new AndroidJavaClass(pluginName);
@@ -31,7 +31,7 @@ public abstract class Bluetooth {
         }
     }
 
-    public AndroidJavaObject PluginInstance {
+    protected AndroidJavaObject PluginInstance {
         get {
             if (_pluginInstance == null){
                 AndroidJavaClass jc = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
@@ -50,23 +50,15 @@ public abstract class Bluetooth {
         PluginInstance.Call("write", data);
     }
 
-    public static bool Enable() {
-        return PluginClass.CallStatic<bool>("enableAdapter");
-    }
-
-    public static bool Disable() {
-        return PluginClass.CallStatic<bool>("disableAdapter");
-    }
-
     public static void SearchDevices() {
         PluginClass.CallStatic("searchDevices");
     }
 
-    public static void requestEnableBluetooth() {
+    public static void RequestEnableBluetooth() {
         PluginClass.CallStatic("requestEnableBluetooth");
     }
 
-    public static void requestEnableDiscoverability() {
+    public static void RequestEnableDiscoverability() {
         PluginClass.CallStatic("requestEnableDiscoverability");
     }
 
@@ -91,15 +83,15 @@ public abstract class Bluetooth {
         return bondedDevices;
     }
 
-    public static List<BluetoothDevice> getBondedDevices() {
+    public static List<BluetoothDevice> GetBondedDevices() {
         return getDevices(0);
     }
 
-    public static List<BluetoothDevice> getDiscoveredDevices() {
+    public static List<BluetoothDevice> GetDiscoveredDevices() {
         return getDevices(1);
     }
 
-    public bool IsBluetoothEnabled {
+    public static bool IsBluetoothEnabled {
         get {
             return PluginClass.CallStatic<bool>("isEnabled");
         }
@@ -120,7 +112,7 @@ public abstract class Bluetooth {
         }
     }
 
-    public string DefaultUUID {
+    public static string DefaultUUID {
         get { return PluginClass.CallStatic<string>("getSerialUUID"); }
     }
 
