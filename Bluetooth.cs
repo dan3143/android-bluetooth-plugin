@@ -5,6 +5,11 @@ using System.Collections.Generic;
 public struct BluetoothDevice {
     public string name;
     public string address;
+    public BluetoothDevice(string n, string a)
+    {
+        name = n;
+        address = a;
+    }
 }
 
 public abstract class Bluetooth {
@@ -61,12 +66,12 @@ public abstract class Bluetooth {
         return ServiceClass.CallStatic<string>("getSerialUUID");
     }
 
-    public static string GetDeviceName(string address) 
+    public static BluetoothDevice GetDevice(string address) 
     {
-        return ServiceClass.CallStatic<string>("getDeviceName", address);    
+        return new BluetoothDevice(ServiceClass.CallStatic<string>("getDeviceName", address), address);    
     }
 
-    private static List<BluetoothDevice> getDevices(int type) {
+    private static List<BluetoothDevice> GetDevices(int type) {
         AndroidJavaObject array;
         if (type == 0) {
             array = ServiceClass.CallStatic<AndroidJavaObject>("u_getBondedDevices");
@@ -87,12 +92,12 @@ public abstract class Bluetooth {
         return bondedDevices;
     }
 
-    public static List<BluetoothDevice> getBondedDevices() {
-        return getDevices(0);
+    public static List<BluetoothDevice> GetBondedDevices() {
+        return GetDevices(0);
     }
 
-    public static List<BluetoothDevice> getDiscoveredDevices() {
-        return getDevices(1);
+    public static List<BluetoothDevice> GetDiscoveredDevices() {
+        return GetDevices(1);
     }
 
     public static bool IsEnabled {
