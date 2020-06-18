@@ -46,6 +46,7 @@ public class BluetoothControl : MonoBehaviour
             if (tmpBt == null) {
                 tmpBt = _instance.GetComponent<BluetoothControl>().server;
             }
+            Debug.Log("tmpBt: " + tmpBt);
             return tmpBt;
          }
     }
@@ -58,11 +59,11 @@ public class BluetoothControl : MonoBehaviour
             DestroyImmediate(this.gameObject);
         } else {
             _instance = this;
-            server = new BluetoothServer();
-            if (server.IsBluetoothEnabled) {
-                server.Start();
+            _instance.server = new BluetoothServer();
+            if (Bluetooth.IsEnabled) {
+                _instance.server.Start();
             }
-            server.PlayerObject = this.gameObject.name;
+            _instance.server.PlayerObject = this.gameObject.name;
             DontDestroyOnLoad(this.gameObject);
         }
     }
@@ -74,8 +75,7 @@ public class BluetoothControl : MonoBehaviour
 
     private bool GetButtonStatus(string name, int status) 
     {
-        if (!server.IsBluetoothEnabled) {
-            Debug.LogError("Bluetooth is off");
+        if (!Bluetooth.IsEnabled) {
             return false;
         }
 

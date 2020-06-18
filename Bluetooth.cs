@@ -16,58 +16,62 @@ public abstract class Bluetooth {
     public const string MODE_NONE = "bluetooth.mode.none";
     public const string ON = "bluetooth.on";
     public const string OFF = "bluetooth.off";
-
-    const string pluginName = "com.example.bluetooth.BluetoothService";
-    protected static AndroidJavaClass _pluginClass;
-    protected AndroidJavaObject _pluginInstance;
-    public static List<BluetoothDevice> foundDevices;
+    protected string className = "com.guevara.bluetooth.BluetoothService";
+    private const string btServiceClass = "com.guevara.bluetooth.BluetoothService";
+    private static AndroidJavaClass _serviceClass;
+    private AndroidJavaClass _class;
+    private AndroidJavaObject _instance;
     
-    protected static AndroidJavaClass PluginClass {
+    public List<BluetoothDevice> foundDevices;
+    
+    protected AndroidJavaClass PluginClass {
         get {
-            if (_pluginClass == null){
-                _pluginClass = new AndroidJavaClass(pluginName);
+            if (_class == null){
+                _class = new AndroidJavaClass(className);
             }
-            return _pluginClass;
+            return _class;
         }
     }
 
     protected AndroidJavaObject PluginInstance {
         get {
-            if (_pluginInstance == null){
-                AndroidJavaClass jc = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-                AndroidJavaObject activity = jc.GetStatic<AndroidJavaObject>("currentActivity");
-                _pluginInstance = PluginClass.CallStatic<AndroidJavaObject>("createInstance", activity);
+            if (_instance == null){
+                _instance = new AndroidJavaObject(className);
             }
-            return _pluginInstance;
+            return _instance;
         }
     }
 
-    public void Stop(){
-        PluginInstance.Call("stop");
+    private static AndroidJavaClass ServiceClass {
+        get {
+            if (_serviceClass == null) {
+                _serviceClass = new AndroidJavaClass("com.guevara.bluetooth.BluetoothService");
+            }
+            return _serviceClass;
+        }
     }
 
-    public void Write(string data) {
-        PluginInstance.Call("write", data);
+    public static void SearchDevices() 
+    {
+        ServiceClass.CallStatic("searchDevices");
     }
 
-    public static void SearchDevices() {
-        PluginClass.CallStatic("searchDevices");
+    public static string GetSerialUUID() 
+    {
+        return ServiceClass.CallStatic<string>("getSerialUUID");
     }
 
-    public static void RequestEnableBluetooth() {
-        PluginClass.CallStatic("requestEnableBluetooth");
-    }
-
-    public static void RequestEnableDiscoverability() {
-        PluginClass.CallStatic("requestEnableDiscoverability");
+    public static string GetDeviceName(string address) 
+    {
+        return ServiceClass.CallStatic<string>("getDeviceName", address);    
     }
 
     private static List<BluetoothDevice> getDevices(int type) {
         AndroidJavaObject array;
         if (type == 0) {
-            array = PluginClass.CallStatic<AndroidJavaObject>("u_getBondedDevices");
+            array = ServiceClass.CallStatic<AndroidJavaObject>("u_getBondedDevices");
         } else {
-            array = PluginClass.CallStatic<AndroidJavaObject>("u_getDiscoveredDevices");
+            array = ServiceClass.CallStatic<AndroidJavaObject>("u_getDiscoveredDevices");
         }
         List<BluetoothDevice> bondedDevices = new List<BluetoothDevice>();
         if (array.GetRawObject().ToInt32() != 0) {
@@ -83,24 +87,26 @@ public abstract class Bluetooth {
         return bondedDevices;
     }
 
-    public static List<BluetoothDevice> GetBondedDevices() {
+    public static List<BluetoothDevice> getBondedDevices() {
         return getDevices(0);
     }
 
-    public static List<BluetoothDevice> GetDiscoveredDevices() {
+    public static List<BluetoothDevice> getDiscoveredDevices() {
         return getDevices(1);
     }
 
-    public static bool IsBluetoothEnabled {
+    public static bool IsEnabled {
         get {
-            return PluginClass.CallStatic<bool>("isEnabled");
+            return ServiceClass.CallStatic<bool>("isEnabled");
         }
     }
 
-    public bool IsConnected {
-        get {
-            return PluginInstance.Call<bool>("isConnected");
-        }
+    public void RequestEnableBluetooth() {
+        PluginInstance.Call("requestEnableBluetooth");
+    }
+
+    public void RequestEnableDiscoverability() {
+        PluginInstance.Call("requestEnableDiscoverability");
     }
 
     public string PlayerObject {
@@ -110,10 +116,6 @@ public abstract class Bluetooth {
         get {
             return PluginInstance.Call<string>("getGameObject");    
         }
-    }
-
-    public static string DefaultUUID {
-        get { return PluginClass.CallStatic<string>("getSerialUUID"); }
     }
 
     public string ServerObject {
