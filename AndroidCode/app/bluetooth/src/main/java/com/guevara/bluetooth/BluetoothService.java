@@ -24,9 +24,6 @@ public abstract class BluetoothService {
     public static final String MESSAGE = "com.guevara.bluetooth.MESSAGE";
     public static final String MESSAGE_EXTRA = "com.guevara.bluetooth.MESSAGE_EXTRA";
     public static final String TYPE_EXTRA = "com.guevara.bluetooth.TYPE_EXTRA";
-    public static final int TYPE_STATUS = 0;
-    public static final int TYPE_DATA = 1;
-    private static final int BYTE_OFFSET = 6;
 
     public static final String TAG = "BluetoothManager-Plugin";
     static final int STATE_NONE = 0;
@@ -51,18 +48,6 @@ public abstract class BluetoothService {
         return btAdapter.isEnabled();
     }
 
-     void send(String to, String message) {
-        if (runningUnity) {
-            UnityPlayer.UnitySendMessage(to, BT_MESSAGE, message);
-        }
-        else {
-            int type = to.equals(serverObject) ? TYPE_STATUS : TYPE_DATA;
-            Intent intent = new Intent(MESSAGE);
-            intent.putExtra(TYPE_EXTRA, type);
-            intent.putExtra(MESSAGE_EXTRA, message);
-            activity.sendBroadcast(intent);
-        }
-    }
 
     public static String getSerialUUID() {
         return SERIAL_UUID;
@@ -114,7 +99,8 @@ public abstract class BluetoothService {
 
     private int state;
     private String gameObject;
-    private String serverObject;
+    protected OnBluetoothMessageListener onMessageListener;
+    protected OnBluetoothStatusListener onStatusListener;
 
     BluetoothService() {
         this(UnityPlayer.currentActivity);
@@ -122,12 +108,12 @@ public abstract class BluetoothService {
 
     BluetoothService(Activity activity) {
         state = STATE_NONE;
-        gameObject = "PlayerObject";
-        serverObject = "ServerObject";
+        gameObject = "GameObject";
         this.activity = activity;
         registerIntent(activity);
+        onMessageListener = (message, fromAddress) -> {};
+        onStatusListener = message -> {};
     }
-
 
     public void requestEnableBluetooth() {
         if (activity == null) {
@@ -153,9 +139,7 @@ public abstract class BluetoothService {
     public String getGameObject(){
         return gameObject;
     }
-    public String getServerObject(){
-        return serverObject;
-    }
+
     public synchronized int getState() {
         return state;
     }
@@ -165,10 +149,17 @@ public abstract class BluetoothService {
     public void setGameObject(String name){
         gameObject = name;
     }
-    public void setServerObject(String name){
-        serverObject = name;
+
+    public void setOnMessageListener(OnBluetoothMessageListener listener) {
+        this.onMessageListener = listener;
     }
+
+    public void setOnStatusListener(OnBluetoothStatusListener listener) {
+        this.onStatusListener = listener;
+    }
+
     synchronized void setState(int state) { this.state = state; }
+
 
     private void registerIntent(Activity activity)
     {
@@ -226,9 +217,11 @@ public abstract class BluetoothService {
                 try{
                     bytes = inputStream.read(buffer);
                     String message = new String(buffer, 0, bytes);
-                    send(gameObject, message);
+                    onMessageListener.OnMessage(message, socket.getRemoteDevice().getAddress());
+                    //send(gameObject, message);
                 }catch (IOException e) {
-                    send(serverObject, "socket.error.COULD_NOT_READ");
+                    onStatusListener.OnStatus("socket.error.COULD_NOT_READ");
+                    //send(serverObject, "socket.error.COULD_NOT_READ");
                     cancel();
                     break;
                 }
@@ -240,7 +233,8 @@ public abstract class BluetoothService {
                 outputStream.write(buffer);
             }catch (IOException e){
                 cancel();
-                send(serverObject, "socket.error.COULD_NOT_WRITE");
+                onStatusListener.OnStatus("socket.error.COULD_NOT_WRITE");
+                //send(serverObject, "socket.error.COULD_NOT_WRITE");
                 Log.e(TAG, "Exception during write", e);
             }
         }
@@ -265,10 +259,12 @@ public abstract class BluetoothService {
                 int state = intent.getExtras().getInt(BluetoothAdapter.EXTRA_STATE);
                 switch (state) {
                     case BluetoothAdapter.STATE_ON:
-                        send(serverObject, "bluetooth.on");
+                        onStatusListener.OnStatus("bluetooth.on");
+                        //send(serverObject, "bluetooth.on");
                         break;
                     case BluetoothAdapter.STATE_OFF:
-                        send(serverObject, "bluetooth.off");
+                        onStatusListener.OnStatus("bluetooth.off");
+                        //send(serverObject, "bluetooth.off");
                         break;
                 }
             }
@@ -277,31 +273,44 @@ public abstract class BluetoothService {
                 int state = intent.getExtras().getInt(BluetoothAdapter.EXTRA_SCAN_MODE);
                 switch (state) {
                     case BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE:
-                        send(serverObject, "bluetooth.mode.discoverable");
+                        onStatusListener.OnStatus("bluetooth.mode.discoverable");
+                        //send(serverObject, "bluetooth.mode.discoverable");
                         break;
                     case BluetoothAdapter.SCAN_MODE_CONNECTABLE:
-                        send(serverObject, "bluetooth.mode.connectable");
+                        onStatusListener.OnStatus("bluetooth.mode.connectable");
+                        //send(serverObject, "bluetooth.mode.connectable");
                         break;
                     case BluetoothAdapter.SCAN_MODE_NONE:
-                        send(serverObject, "bluetooth.mode.none");
+                        onStatusListener.OnStatus("bluetooth.mode.none");
+                        //send(serverObject, "bluetooth.mode.none");
                         break;
-
                 }
             }
 
             if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
-                send(serverObject, "bluetooth.connected");
+                onStatusListener.OnStatus("bluetooth.connected");
+                //send(serverObject, "bluetooth.connected");
             }
             if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
-                send(serverObject, "bluetooth.disconnected");
+                onStatusListener.OnStatus("bluetooth.disconnected");
+                //send(serverObject, "bluetooth.disconnected");
             }
 
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice dev = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                send(serverObject, "bluetooth.found." + dev.getAddress());
+                onStatusListener.OnStatus("bluetooth.found." + dev.getAddress());
+                //send(serverObject, "bluetooth.found." + dev.getAddress());
                 BluetoothService.foundDevices.add(dev);
             }
         }
+    }
+
+    interface OnBluetoothMessageListener {
+        void OnMessage(String message, String fromAddress);
+    }
+
+    interface OnBluetoothStatusListener {
+        void OnStatus(String status);
     }
 }
 

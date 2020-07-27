@@ -29,7 +29,10 @@ public class BluetoothClient extends BluetoothService {
 
     private void connected(BluetoothSocket socket) {
         connectedThread = new ConnectedThread(socket);
-        connectedThread.setOnDisconnectEvent(() -> super.send(getServerObject(), "client.connection_lost"));
+        connectedThread.setOnDisconnectEvent(() -> {
+            onStatusListener.OnStatus("client.connection_lost");
+            //super.send(getServerObject(), "client.connection_lost");
+        });
         connectedThread.start();
     }
 
@@ -63,7 +66,8 @@ public class BluetoothClient extends BluetoothService {
 
     public void disconnect() {
         connectedThread.cancel();
-        send(getServerObject(), "client.disconnected");
+        onStatusListener.OnStatus("client.disconnected");
+        //send(getServerObject(), "client.disconnected");
         setState(STATE_NONE);
     }
 
@@ -77,7 +81,8 @@ public class BluetoothClient extends BluetoothService {
             try{
                 socket = this.device.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
             }catch(IOException e) {
-                send(getServerObject(), "client.error.COULD_NOT_CREATE_SOCKET");
+                onStatusListener.OnStatus("client.error.COULD_NOT_CREATE_SOCKET");
+                //send(getServerObject(), "client.error.COULD_NOT_CREATE_SOCKET");
                 Log.e(TAG, "Socket creation failed");
             }
             setState(STATE_CONNECTING);
@@ -88,9 +93,11 @@ public class BluetoothClient extends BluetoothService {
             try {
                 socket.connect();
                 setState(STATE_CONNECTED);
-                send(getServerObject(), "client.connected");
+                onStatusListener.OnStatus("client.connected." + socket.getRemoteDevice().getAddress());
+                //send(getServerObject(), "client.connected");
             } catch (IOException e){
-                send(getServerObject(), "client.error.COULD_NOT_CONNECT");
+                onStatusListener.OnStatus("client.error.COULD_NOT_CONNECT");
+                //send(getServerObject(), "client.error.COULD_NOT_CONNECT");
                 Log.e(TAG,"Error", e);
                 cancel();
             }

@@ -65,7 +65,8 @@ public class BluetoothServer extends BluetoothService {
         for (ConnectedThread conn : connections) {
             conn.cancel();
         }
-        send(getServerObject(), "server.stopped");
+        onStatusListener.OnStatus("server.stopped");
+        //send(getServerObject(), "server.stopped");
     }
 
     private class AcceptThread extends Thread {
@@ -77,13 +78,15 @@ public class BluetoothServer extends BluetoothService {
             try{
                 serverSocket = btAdapter.listenUsingRfcommWithServiceRecord(name, UUID.fromString(uuidStr));
             } catch (IOException ex){
-                send(getServerObject(), "server.error.COULD_NOT_LISTEN");
+                onStatusListener.OnStatus("server.error.COULD_NOT_LISTEN");
+                //send(getServerObject(), "server.error.COULD_NOT_LISTEN");
                 Log.e(TAG, "Could not open socket", ex);
             }
         }
 
         public void run() {
-            send(getServerObject(), "server.listening");
+            onStatusListener.OnStatus("server.listening");
+            //send(getServerObject(), "server.listening");
             while (connections.size() < maxConnections) {
                 setState(STATE_LISTENING);
                 try {
@@ -94,18 +97,22 @@ public class BluetoothServer extends BluetoothService {
                         conn.start();
                         connections.add(conn);
                         conn.setOnDisconnectEvent(() -> {
-                            send(getServerObject(), "server.disconnected." + socket.getRemoteDevice().getAddress());
+                            onStatusListener.OnStatus("server.disconnected." + socket.getRemoteDevice().getAddress());
+                            //send(getServerObject(), "server.disconnected." + socket.getRemoteDevice().getAddress());
                             connections.remove(conn);
                         });
-                        send(getServerObject(),  "server.connected." + socket.getRemoteDevice().getAddress());
+                        onStatusListener.OnStatus("server.connected." + socket.getRemoteDevice().getAddress());
+                        //send(getServerObject(),  "server.connected." + socket.getRemoteDevice().getAddress());
                     }
                 } catch (IOException ex) {
-                    send(getServerObject(), "server.error.COULD_NOT_ACCEPT");
+                    onStatusListener.OnStatus("server.error.COULD_NOT_ACCEPT");
+                    //send(getServerObject(), "server.error.COULD_NOT_ACCEPT");
                     Log.e(TAG, "Socket's accept() method failed", ex);
                     break;
                 }
             }
-            send(getServerObject(), "server.not_listening");
+            onStatusListener.OnStatus("server.not_listening");
+            //send(getServerObject(), "server.not_listening");
             cancel();
         }
 
