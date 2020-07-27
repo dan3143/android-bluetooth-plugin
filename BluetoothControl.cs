@@ -7,14 +7,18 @@ public class BluetoothControl : MonoBehaviour
 {
     [System.Serializable]
     public class BluetoothButton {
+        public enum ButtonType {
+            BUTTON,
+            JOYSTICK
+        }
         public string name;
         public string key_name;
         public string pressed_name;
         public string released_name;
+        public ButtonType type;
         private bool isPressed = false;
         private bool isReleased = false;
         private bool isClicked = false;
-
         public bool IsPressed {
             get { return isPressed; }
             set { isPressed = value; }
@@ -29,13 +33,46 @@ public class BluetoothControl : MonoBehaviour
         }
     }
 
+    public class OnMessageListener : AndroidJavaProxy {
+        private BluetoothControl bc;
+        
+        public OnMessageListener(BluetoothControl bc) : base(Bluetooth.INTERFACE_MESSAGE_NAME) {
+            this.bc = bc;
+        }
+
+        public void OnMessage(string message, string addressFrom) {
+            Debug.Log("Message from: " + Bluetooth.GetDevice(addressFrom).name);
+            foreach (BluetoothButton btn in bc.buttons) {
+                if (message == btn.pressed_name) {
+                    btn.IsPressed = true;
+                    break;
+                } else {
+                    btn.IsPressed = false;
+                }
+                if (message == btn.released_name) {
+                    btn.IsReleased = true;
+                    break;
+                } else {
+                    btn.IsReleased = false;
+                }
+
+                if (message == btn.key_name) {
+                    btn.IsClicked = true;
+                    bc.StartCoroutine(bc.ToggleClick(btn));
+                    break;
+                } else {
+                    btn.IsClicked = false;
+                }
+            }
+        }
+    }
+
     private static BluetoothControl _instance;
     private const int STATUS_RELEASED = 0;
     private const int STATUS_PRESSED = 1;
     private const int STATUS_CLICKED = 2;
     private BluetoothServer server;
     [SerializeField] private BluetoothButton[] buttons;
-    private static BluetoothServer tmpBt;
 
     public static BluetoothControl Instance {
         get { return _instance; }
@@ -43,11 +80,8 @@ public class BluetoothControl : MonoBehaviour
 
     public static BluetoothServer Server {
         get { 
-            if (tmpBt == null) {
-                tmpBt = _instance.GetComponent<BluetoothControl>().server;
-            }
-            Debug.Log("tmpBt: " + tmpBt);
-            return tmpBt;
+            Debug.Log("_instance.server: " + _instance.server);
+            return _instance.server;
          }
     }
 
@@ -70,7 +104,7 @@ public class BluetoothControl : MonoBehaviour
 
     void Start() 
     {
-        
+        Server.SetOnMessageListener(new OnMessageListener(this));
     }
 
     private bool GetButtonStatus(string name, int status) 
@@ -119,28 +153,6 @@ public class BluetoothControl : MonoBehaviour
     }
 
     void OnMessage(string message) {
-        Debug.Log("Message:" + message);
-        foreach (BluetoothButton btn in buttons) {
-            if (message == btn.pressed_name) {
-                btn.IsPressed = true;
-                break;
-            } else {
-                btn.IsPressed = false;
-            }
-            if (message == btn.released_name) {
-                btn.IsReleased = true;
-                break;
-            } else {
-                btn.IsReleased = false;
-            }
-
-            if (message == btn.key_name) {
-                btn.IsClicked = true;
-                StartCoroutine(ToggleClick(btn));
-                break;
-            } else {
-                btn.IsClicked = false;
-            }
-        }
+        
     }
 }

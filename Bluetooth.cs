@@ -21,7 +21,10 @@ public abstract class Bluetooth {
     public const string MODE_NONE = "bluetooth.mode.none";
     public const string ON = "bluetooth.on";
     public const string OFF = "bluetooth.off";
+    public const string INTERFACE_MESSAGE_NAME = "com.guevara.bluetooth.BluetoothService$OnBluetoothMessageListener";
+    public const string INTERFACE_STATUS_NAME = "com.guevara.bluetooth.BluetoothService$OnBluetoothStatusListener";
     protected string className = "com.guevara.bluetooth.BluetoothService";
+    
     private const string btServiceClass = "com.guevara.bluetooth.BluetoothService";
     private static AndroidJavaClass _serviceClass;
     private AndroidJavaClass _class;
@@ -106,6 +109,14 @@ public abstract class Bluetooth {
         }
     }
 
+    public void SetOnMessageListener(AndroidJavaProxy listener) {
+        PluginInstance.Call("setOnMessageListener", listener);
+    }
+
+    public void SetOnStatusListener(AndroidJavaProxy listener) {
+        PluginInstance.Call("setOnStatusListener", listener);
+    }
+
     public void RequestEnableBluetooth() {
         PluginInstance.Call("requestEnableBluetooth");
     }
@@ -120,15 +131,6 @@ public abstract class Bluetooth {
         }
         get {
             return PluginInstance.Call<string>("getGameObject");    
-        }
-    }
-
-    public string ServerObject {
-        set {
-            PluginInstance.Call("setServerObject", value);    
-        }
-        get {
-            return PluginInstance.Call<string>("getServerObject");    
         }
     }
 
