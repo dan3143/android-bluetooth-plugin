@@ -12,15 +12,15 @@ namespace UnityAndroidBluetooth {
 
         /* ========== EVENT HANDLING ========== */
         public event EventHandler<ServerStateChangedEventArgs> ServerStateChanged;
-        public event EventHandler<DeviceStatusChangedEventArgs> DeviceStatusChanged;
+        public event EventHandler<DeviceStateChangedEventArgs> DeviceStateChanged;
 
         protected virtual void OnServerStateChanged(ServerStateChangedEventArgs args) 
         {
             ServerStateChanged?.Invoke(this, args);
         }
 
-        protected virtual void OnDeviceStatusChanged(DeviceStatusChangedEventArgs args) {
-            DeviceStatusChanged?.Invoke(this, args);
+        protected virtual void OnDeviceStateChanged(DeviceStateChangedEventArgs args) {
+            DeviceStateChanged?.Invoke(this, args);
         }
 
         // JNI Interface
@@ -49,15 +49,15 @@ namespace UnityAndroidBluetooth {
                         break;
                 }
                 string[] tokens = status.Split('.');
-                DeviceStatusChangedEventArgs devArgs = new DeviceStatusChangedEventArgs();
+                DeviceStateChangedEventArgs devArgs = new DeviceStateChangedEventArgs();
                 if (tokens[0] == "server" && tokens.Length >= 3) {
-                    devArgs.address = tokens[2];
+                    devArgs.Device = Bluetooth.GetDevice(tokens[2]);
                     if (tokens[1] == "connected") {    
                         devArgs.IsConnected = true;
-                        server.OnDeviceStatusChanged(devArgs);
+                        server.OnDeviceStateChanged(devArgs);
                     } else if (tokens[1] == "disconnected") {
                         devArgs.IsConnected = false;
-                        server.OnDeviceStatusChanged(devArgs);
+                        server.OnDeviceStateChanged(devArgs);
                     }
                 }   
             }

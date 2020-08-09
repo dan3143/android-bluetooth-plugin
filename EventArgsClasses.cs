@@ -25,7 +25,7 @@ namespace UnityAndroidBluetooth {
     }
 
     public class MessageReceivedEventArgs : EventArgs {
-        public string SenderAddress { get; set; }
+        public BluetoothDevice Sender { get; set; }
         public string Message { get; set; }
     }
 
@@ -37,8 +37,8 @@ namespace UnityAndroidBluetooth {
         public ServerState State { get; set; } 
     }
 
-    public class DeviceStatusChangedEventArgs : EventArgs {
-        public string address { get; set; }
+    public class DeviceStateChangedEventArgs : EventArgs {
+        public BluetoothDevice Device { get; set; }
         public bool IsConnected { get; set; }
     }
 

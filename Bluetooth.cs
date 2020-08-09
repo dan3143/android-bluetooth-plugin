@@ -61,7 +61,7 @@ namespace UnityAndroidBluetooth {
             public virtual void OnMessage (string message, string address) {
                 MessageReceivedEventArgs e = new MessageReceivedEventArgs();
                 e.Message = message;
-                e.SenderAddress = address;
+                e.Sender = GetDevice(address);
                 bluetooth.OnMessageReceived(e);
             }
         }

@@ -74,7 +74,7 @@ namespace UnityAndroidBluetooth {
 
         void OnMessage(object sender, MessageReceivedEventArgs args) {
             string message = args.Message;
-            string from = args.SenderAddress;
+            BluetoothDevice from = args.Sender;
             foreach (BluetoothButton btn in buttons) {
                 if (message == btn.pressed_name) {
                     btn.IsPressed = true;
