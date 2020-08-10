@@ -5,16 +5,16 @@ namespace UnityAndroidBluetooth{
     public class BluetoothClient: Bluetooth {
 
         /* ========== CONSTANTS ========== */
-        public const string COULD_NOT_CREATE_SOCKET = "client.error.COULD_NOT_CREATE_SOCKET";
-        public const string COULD_NOT_CONNECT = "client.error.COULD_NOT_CONNECT";
-        public const string CONNECTION_LOST = "client.connection_lost";
-        public const string DISCONNECTED = "client.disconnected";
+        private const string COULD_NOT_CREATE_SOCKET = "client.error.COULD_NOT_CREATE_SOCKET";
+        private const string COULD_NOT_CONNECT = "client.error.COULD_NOT_CONNECT";
+        private const string CONNECTION_LOST = "client.connection_lost";
+        private const string DISCONNECTED = "client.disconnected";
 
         /* ========== EVENT HANDLING ========== */
 
         public event EventHandler ConnectionLost;
         public event EventHandler Disconnected;
-        public event EventHandler<ClientConnectedEventArgs> Connected;
+        public event EventHandler<DeviceInfoEventArgs> Connected;
 
         protected virtual void OnConnectionLost()
         {
@@ -26,9 +26,9 @@ namespace UnityAndroidBluetooth{
             Disconnected?.Invoke(this, EventArgs.Empty);
         }
 
-        protected virtual void OnConnected(ClientConnectedEventArgs args)
+        protected virtual void OnConnected(DeviceInfoEventArgs e)
         {
-            Connected?.Invoke(this, args);
+            Connected?.Invoke(this, e);
         }
 
         // JNI Interface
@@ -42,9 +42,9 @@ namespace UnityAndroidBluetooth{
                 base.OnStatus(message);
                 switch(message) {
                     case BluetoothClient.COULD_NOT_CREATE_SOCKET:
-                        throw new ClientException("The client could not create a socket");
+                        throw new BluetoothException("The client could not create a socket");
                     case BluetoothClient.COULD_NOT_CONNECT:
-                        throw new ClientException("The client could not connect to the server");
+                        throw new BluetoothException("The client could not connect to the server");
                     case BluetoothClient.CONNECTION_LOST:
                         client.OnConnectionLost();
                         break;
@@ -54,11 +54,11 @@ namespace UnityAndroidBluetooth{
                 }
 
                 string[] tokens = message.Split('.');
-                if (tokens[1] == "connected")
+                if (tokens[0] == "client" && tokens[1] == "connected")
                 {
-                    ClientConnectedEventArgs args = new ClientConnectedEventArgs();
-                    args.ServerAddress = tokens[2];
-                    client.OnConnected(args);
+                    DeviceInfoEventArgs e = new DeviceInfoEventArgs();
+                    e.Device = Bluetooth.GetDevice(tokens[2]);
+                    client.OnConnected(e);
                 }
 
             }
@@ -70,11 +70,6 @@ namespace UnityAndroidBluetooth{
         }
 
         /* ========== JNI METHODS ========== */
-
-        public void Send(string message)
-        {
-            PluginInstance.Call("send", message);
-        }
 
         public void Connect(string address, string uuid)
         {
@@ -89,6 +84,11 @@ namespace UnityAndroidBluetooth{
         public void Disconnect()
         {
             PluginInstance.Call("disconnect");
+        }
+
+        public void Send(string message)
+        {
+            PluginInstance.Call("send", message);
         }
     }
 }

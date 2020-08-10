@@ -17,42 +17,39 @@ namespace UnityAndroidBluetooth {
     public abstract class Bluetooth {
 
         /* ========== CONSTANTS ========== */
-        public const string COULD_NOT_READ = "socket.error.COULD_NOT_READ";
-        public const string COULD_NOT_WRITE = "socket.error.COULD_NOT_WRITE";
-        public const string MODE_DISCOVERABLE = "bluetooth.mode.discoverable";
-        public const string MODE_CONNECTABLE = "bluetooth.mode.connectable";
-        public const string MODE_NONE = "bluetooth.mode.none";
-        public const string ON = "bluetooth.on";
-        public const string OFF = "bluetooth.off";
-        public const string INTERFACE_MESSAGE_NAME = "com.guevara.bluetooth.BluetoothService$OnBluetoothMessageListener";
-        public const string INTERFACE_STATUS_NAME = "com.guevara.bluetooth.BluetoothService$OnBluetoothStatusListener";
+        private const string COULD_NOT_READ = "socket.error.COULD_NOT_READ";
+        private const string COULD_NOT_WRITE = "socket.error.COULD_NOT_WRITE";
+        private const string MODE_DISCOVERABLE = "bluetooth.mode.discoverable";
+        private const string MODE_CONNECTABLE = "bluetooth.mode.connectable";
+        private const string MODE_NONE = "bluetooth.mode.none";
+        private const string ON = "bluetooth.on";
+        private const string OFF = "bluetooth.off";
+        private const string INTERFACE_MESSAGE_NAME = "com.guevara.bluetooth.BluetoothService$OnBluetoothMessageListener";
+        private const string INTERFACE_STATUS_NAME = "com.guevara.bluetooth.BluetoothService$OnBluetoothStatusListener";
         protected string className = "com.guevara.bluetooth.BluetoothService";
         private const string btServiceClass = "com.guevara.bluetooth.BluetoothService";
+        public const string SERIAL_UUID = "00001101-0000-1000-8000-00805F9B34FB";
 
         /* ========== EVENT HANDLING ========== */
 
         // Events
-        public event EventHandler<BluetoothModeChangedEventArgs> ModeChanged;
         public event EventHandler<BluetoothStateChangedEventArgs> StateChanged;
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
+        public event EventHandler<BluetoothModeChangedEventArgs> ModeChanged;
         
-        protected virtual void OnModeChanged(BluetoothModeChangedEventArgs e)
-        {
-            var handler = ModeChanged;
-            handler?.Invoke(this, e);
+        protected virtual void OnModeChanged(BluetoothModeChangedEventArgs e) {
+            ModeChanged?.Invoke(this, e);
         }
 
         protected virtual void OnStateChanged(BluetoothStateChangedEventArgs e) {
-            var handler = StateChanged;
-            handler?.Invoke(this, e);
+            StateChanged?.Invoke(this, e);
         }
 
         protected virtual void OnMessageReceived(MessageReceivedEventArgs e) {
-            var handler = MessageReceived;
-            handler?.Invoke(this, e);
+            MessageReceived?.Invoke(this, e);
         }
 
-        // JNI Interface
+        // JNI Interfaces
         protected class OnAndroidMessage : AndroidJavaProxy {
             protected Bluetooth bluetooth;
             public OnAndroidMessage(Bluetooth bt) : base(INTERFACE_MESSAGE_NAME) {
@@ -73,32 +70,32 @@ namespace UnityAndroidBluetooth {
             }
 
             public virtual void OnStatus(string status) {
-                BluetoothModeChangedEventArgs modeArgs = new BluetoothModeChangedEventArgs();
-                BluetoothStateChangedEventArgs stateArgs = new BluetoothStateChangedEventArgs();
+                BluetoothModeChangedEventArgs e = new BluetoothModeChangedEventArgs();
+                BluetoothStateChangedEventArgs e2 = new BluetoothStateChangedEventArgs();
                 switch(status) {
                     case Bluetooth.COULD_NOT_READ:
-                        throw new CouldNotReadException("Could not read from bluetooth socket");
+                        throw new BluetoothException("Could not read from bluetooth socket");
                     case Bluetooth.COULD_NOT_WRITE:
-                        throw new CouldNotWriteException("Could not write into bluetooth socket");
+                        throw new BluetoothException("Could not write into bluetooth socket");
                     case Bluetooth.MODE_CONNECTABLE:
-                        modeArgs.Mode = BluetoothMode.CONNECTABLE;
-                        bluetooth.OnModeChanged(modeArgs);
+                        e.Mode = BluetoothMode.CONNECTABLE;
+                        bluetooth.OnModeChanged(e);
                         break;
                     case Bluetooth.MODE_DISCOVERABLE:
-                        modeArgs.Mode = BluetoothMode.DISCOVERABLE;
-                        bluetooth.OnModeChanged(modeArgs);
+                        e.Mode = BluetoothMode.DISCOVERABLE;
+                        bluetooth.OnModeChanged(e);
                         break;
                     case Bluetooth.MODE_NONE:
-                        modeArgs.Mode = BluetoothMode.NONE;
-                        bluetooth.OnModeChanged(modeArgs);
+                        e.Mode = BluetoothMode.NONE;
+                        bluetooth.OnModeChanged(e);
                         break;
                     case Bluetooth.ON:
-                        stateArgs.IsOn = true;
-                        bluetooth.OnStateChanged(stateArgs);
+                        e2.IsOn = true;
+                        bluetooth.OnStateChanged(e2);
                         break;
                     case Bluetooth.OFF:
-                        bluetooth.OnStateChanged(stateArgs);
-                        stateArgs.IsOn = false;
+                        bluetooth.OnStateChanged(e2);
+                        e2.IsOn = false;
                         break;
                 }
             }
@@ -109,16 +106,7 @@ namespace UnityAndroidBluetooth {
         private static AndroidJavaClass _serviceClass;
         private AndroidJavaClass _class;
         private AndroidJavaObject _instance;
-        
         public List<BluetoothDevice> foundDevices;
-
-        public Bluetooth(string classname)
-        {
-            this.className = classname;
-            SetOnAndroidMessage(new OnAndroidMessage(this));
-            SetOnAndroidStatus(new OnAndroidStatus(this));
-        }
-        
         protected AndroidJavaClass PluginClass {
             get {
                 if (_class == null){
@@ -127,7 +115,6 @@ namespace UnityAndroidBluetooth {
                 return _class;
             }
         }
-
         protected AndroidJavaObject PluginInstance {
             get {
                 if (_instance == null){
@@ -137,7 +124,6 @@ namespace UnityAndroidBluetooth {
                 return _instance;
             }
         }
-
         private static AndroidJavaClass ServiceClass {
             get {
                 if (_serviceClass == null) {
@@ -146,20 +132,30 @@ namespace UnityAndroidBluetooth {
                 return _serviceClass;
             }
         }
-
-        public static void SearchDevices() 
-        {
-            ServiceClass.CallStatic("searchDevices");
+        public static bool IsEnabled {
+            get {
+                return ServiceClass.CallStatic<bool>("isEnabled");
+            }
         }
-
-        public static string GetSerialUUID() 
+        
+        public Bluetooth(string classname)
         {
-            return ServiceClass.CallStatic<string>("getSerialUUID");
+            this.className = classname;
+            SetOnAndroidMessage(new OnAndroidMessage(this));
+            SetOnAndroidStatus(new OnAndroidStatus(this));
+        }
+        
+        public static List<BluetoothDevice> GetBondedDevices() {
+            return GetDevices(0);
         }
 
         public static BluetoothDevice GetDevice(string address) 
         {
             return new BluetoothDevice(ServiceClass.CallStatic<string>("getDeviceName", address), address);    
+        }
+
+        public static List<BluetoothDevice> GetDiscoveredDevices() {
+            return GetDevices(1);
         }
 
         private static List<BluetoothDevice> GetDevices(int type) {
@@ -183,30 +179,7 @@ namespace UnityAndroidBluetooth {
             return bondedDevices;
         }
 
-        public static List<BluetoothDevice> GetBondedDevices() {
-            return GetDevices(0);
-        }
-
-        public static List<BluetoothDevice> GetDiscoveredDevices() {
-            return GetDevices(1);
-        }
-
-        public static bool IsEnabled {
-            get {
-                return ServiceClass.CallStatic<bool>("isEnabled");
-            }
-        }
-
-        // Message received from Plugin
-        protected void SetOnAndroidMessage(AndroidJavaProxy listener) {
-            PluginInstance.Call("setOnMessageListener", listener);
-        }
-
-        // Status received from Plugin
-        protected void SetOnAndroidStatus(AndroidJavaProxy listener) {
-            PluginInstance.Call("setOnStatusListener", listener);
-        }
-
+        
         public void RequestEnableBluetooth() {
             PluginInstance.Call("requestEnableBluetooth");
         }
@@ -214,15 +187,19 @@ namespace UnityAndroidBluetooth {
         public void RequestEnableDiscoverability() {
             PluginInstance.Call("requestEnableDiscoverability");
         }
-
-        public string PlayerObject {
-            set {
-                PluginInstance.Call("setGameObject", value);    
-            }
-            get {
-                return PluginInstance.Call<string>("getGameObject");    
-            }
+            
+        public static void SearchDevices() 
+        {
+            ServiceClass.CallStatic("searchDevices");
         }
-    }   
 
+        protected void SetOnAndroidMessage(AndroidJavaProxy listener) {
+            PluginInstance.Call("setOnMessageListener", listener);
+        }
+
+        protected void SetOnAndroidStatus(AndroidJavaProxy listener) {
+            PluginInstance.Call("setOnStatusListener", listener);
+        }
+
+    }   
 }

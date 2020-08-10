@@ -4,23 +4,28 @@ namespace UnityAndroidBluetooth {
     public class BluetoothServer : Bluetooth {
 
         /* ========== CONSTANTS ========== */
-        public const string COULD_NOT_ACCEPT = "server.error.COULD_NOT_ACCEPT";
-        public const string COULD_NOT_LISTEN = "server.error.COULD_NOT_LISTEN";
-        public const string NOT_LISTENING = "server.not_listening";
-        public const string LISTENING = "server.listening";
-        public const string STOPPED = "server.stopped";
+        private const string COULD_NOT_ACCEPT = "server.error.COULD_NOT_ACCEPT";
+        private const string COULD_NOT_LISTEN = "server.error.COULD_NOT_LISTEN";
+        private const string NOT_LISTENING = "server.not_listening";
+        private const string LISTENING = "server.listening";
+        private const string STOPPED = "server.stopped";
 
         /* ========== EVENT HANDLING ========== */
         public event EventHandler<ServerStateChangedEventArgs> ServerStateChanged;
-        public event EventHandler<DeviceStateChangedEventArgs> DeviceStateChanged;
+        public event EventHandler<DeviceInfoEventArgs> ClientConnected;
+        public event EventHandler<DeviceInfoEventArgs> ClientDisconnected;
 
-        protected virtual void OnServerStateChanged(ServerStateChangedEventArgs args) 
+        protected virtual void OnServerStateChanged(ServerStateChangedEventArgs e) 
         {
-            ServerStateChanged?.Invoke(this, args);
+            ServerStateChanged?.Invoke(this, e);
         }
 
-        protected virtual void OnDeviceStateChanged(DeviceStateChangedEventArgs args) {
-            DeviceStateChanged?.Invoke(this, args);
+        protected virtual void OnClientConntected(DeviceInfoEventArgs e) {
+            ClientConnected?.Invoke(this, e);
+        }
+
+        protected virtual void OnClientDisconnected(DeviceInfoEventArgs e) {
+            ClientDisconnected?.Invoke(this, e);
         }
 
         // JNI Interface
@@ -31,33 +36,31 @@ namespace UnityAndroidBluetooth {
             }
             public override void OnStatus(string status){
                 base.OnStatus(status);
-                ServerStateChangedEventArgs args = new ServerStateChangedEventArgs();
+                ServerStateChangedEventArgs e = new ServerStateChangedEventArgs();
                 switch(status) {
                     case COULD_NOT_LISTEN:
-                        throw new ServerException("Could not start listening");
+                        throw new BluetoothException("Server could not start listening");
                     case LISTENING:
-                        args.State = ServerState.LISTENING;
-                        server.OnServerStateChanged(args);
+                        e.State = ServerState.LISTENING;
+                        server.OnServerStateChanged(e);
                         break;
                     case NOT_LISTENING:
-                        args.State = ServerState.NOT_LISTENING;
-                        server.OnServerStateChanged(args);
+                        e.State = ServerState.NOT_LISTENING;
+                        server.OnServerStateChanged(e);
                         break;
                     case STOPPED:
-                        args.State = ServerState.STOPPED;
-                        server.OnServerStateChanged(args);
+                        e.State = ServerState.STOPPED;
+                        server.OnServerStateChanged(e);
                         break;
                 }
                 string[] tokens = status.Split('.');
-                DeviceStateChangedEventArgs devArgs = new DeviceStateChangedEventArgs();
+                DeviceInfoEventArgs e2 = new DeviceInfoEventArgs();
                 if (tokens[0] == "server" && tokens.Length >= 3) {
-                    devArgs.Device = Bluetooth.GetDevice(tokens[2]);
+                    e2.Device = Bluetooth.GetDevice(tokens[2]);
                     if (tokens[1] == "connected") {    
-                        devArgs.IsConnected = true;
-                        server.OnDeviceStateChanged(devArgs);
+                        server.OnClientConntected(e2);
                     } else if (tokens[1] == "disconnected") {
-                        devArgs.IsConnected = false;
-                        server.OnDeviceStateChanged(devArgs);
+                        server.OnClientDisconnected(e2);
                     }
                 }   
             }
@@ -98,7 +101,7 @@ namespace UnityAndroidBluetooth {
             PluginInstance.Call("sendAll", message);
         }
 
-        public void SendTo(string message, string address)
+        public void SendTo(string address, string message)
         {
             PluginInstance.Call("sendTo", message, address);
         }

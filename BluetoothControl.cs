@@ -62,19 +62,18 @@ namespace UnityAndroidBluetooth {
                 if (Bluetooth.IsEnabled) {
                     _instance.server.Start();
                 }
-                _instance.server.PlayerObject = this.gameObject.name;
                 DontDestroyOnLoad(this.gameObject);
             }
         }
 
         void Start() 
         {
-            Server.MessageReceived += OnMessage;
+            Server.MessageReceived += MessageReceivedHandler;
         }
 
-        void OnMessage(object sender, MessageReceivedEventArgs args) {
-            string message = args.Message;
-            BluetoothDevice from = args.Sender;
+        void MessageReceivedHandler(object sender, MessageReceivedEventArgs e) {
+            string message = e.Message;
+            BluetoothDevice from = e.Sender;
             foreach (BluetoothButton btn in buttons) {
                 if (message == btn.pressed_name) {
                     btn.IsPressed = true;
@@ -142,10 +141,6 @@ namespace UnityAndroidBluetooth {
                 yield return null;
                 btn.IsClicked = false;
             }
-        }
-
-        void OnMessage(string message) {
-            
         }
     }
 }

@@ -20,26 +20,17 @@ namespace UnityAndroidBluetooth {
         public bool IsOn { get; set; }
     }
 
-    public class BluetoothSocketConnectedEventArgs : EventArgs {
-        public string Device { get; set; }
-    }
-
     public class MessageReceivedEventArgs : EventArgs {
         public BluetoothDevice Sender { get; set; }
         public string Message { get; set; }
-    }
-
-    public class ClientConnectedEventArgs : EventArgs {
-        public string ServerAddress { get; set; }
     }
 
     public class ServerStateChangedEventArgs: EventArgs {
         public ServerState State { get; set; } 
     }
 
-    public class DeviceStateChangedEventArgs : EventArgs {
+    public class DeviceInfoEventArgs {
         public BluetoothDevice Device { get; set; }
-        public bool IsConnected { get; set; }
     }
 
 }
