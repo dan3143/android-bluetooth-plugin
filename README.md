@@ -8,10 +8,8 @@ For example, if you want to start a server that sends "Hello" to any client that
 ```c#
 BluetoothServer server = new BluetoothServer();
 server.Start();
-server.DeviceStateChanged += (sender, e) => {
-  if (e.IsConnected) {
-    server.SendTo("Hello", e.Sender.address);
-  }
+server.ClientConnected += (sender, e) => {
+  server.SendTo("Hello", e.Sender.address);
 }
 ```
 
