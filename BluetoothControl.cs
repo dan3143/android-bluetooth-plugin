@@ -1,44 +1,15 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
 namespace UnityAndroidBluetooth {
+
     public class BluetoothControl : MonoBehaviour
     {
-        [System.Serializable]
-        public class BluetoothButton {
-            public enum ButtonType {
-                BUTTON,
-                JOYSTICK
-            }
-            public string name;
-            public string key_name;
-            public string pressed_name;
-            public string released_name;
-            public ButtonType type;
-            private bool isPressed = false;
-            private bool isReleased = false;
-            private bool isClicked = false;
-            public bool IsPressed {
-                get { return isPressed; }
-                set { isPressed = value; }
-            }
-            public bool IsReleased {
-                get { return isReleased; }
-                set { isReleased = value; }
-            }
-            public bool IsClicked {
-                get { return isClicked; }
-                set { isClicked = value; }
-            }
-        }
-
         private static BluetoothControl _instance;
-        private const int STATUS_RELEASED = 0;
-        private const int STATUS_PRESSED = 1;
-        private const int STATUS_CLICKED = 2;
         private BluetoothServer server;
-        [SerializeField] private BluetoothButton[] buttons;
+        private List<ControlButton> buttons;
 
         public static BluetoothControl Instance {
             get { return _instance; }
@@ -72,75 +43,77 @@ namespace UnityAndroidBluetooth {
         }
 
         void MessageReceivedHandler(object sender, MessageReceivedEventArgs e) {
-            string message = e.Message;
+            string[] message = e.Message.Split(':');
             BluetoothDevice from = e.Sender;
-            foreach (BluetoothButton btn in buttons) {
-                if (message == btn.pressed_name) {
-                    btn.IsPressed = true;
-                    break;
-                } else {
-                    btn.IsPressed = false;
-                }
-                if (message == btn.released_name) {
-                    btn.IsReleased = true;
-                    break;
-                } else {
-                    btn.IsReleased = false;
-                }
-
-                if (message == btn.key_name) {
-                    btn.IsClicked = true;
-                    StartCoroutine(ToggleClick(btn));
-                    break;
-                } else {
-                    btn.IsClicked = false;
-                }
-            }
-        }
-
-        private bool GetButtonStatus(string name, int status) 
-        {
-            if (!Bluetooth.IsEnabled) {
-                return false;
-            }
-
-            bool found = false;
-            foreach (BluetoothButton btn in buttons) {
-                if (btn.name == name) {
-                    found = true;
-                    switch (status) {
-                        case STATUS_PRESSED:
-                            return btn.IsPressed;
-                        case STATUS_RELEASED:
-                            return btn.IsReleased;
-                        case STATUS_CLICKED:
-                            return btn.IsClicked;
+            foreach (ControlButton btn in buttons) {
+                if (message[0] == btn.SymbolicName) {
+                    if (message[1] == "1") {
+                        btn.IsClicked = true;
+                        btn.IsPressed = true;
+                        StartCoroutine(ToggleClick(btn));
+                        break;
+                    } else {
+                        btn.IsPressed = false;
+                    }
+                    if (btn is ControlJoystick) {
+                        ControlJoystick joystick = btn as ControlJoystick;
+                        joystick.DeltaX = double.Parse(message[2]);
+                        joystick.DeltaY = double.Parse(message[3]);
+                    } else if (btn is ControlTrigger) {
+                        ControlTrigger trigger = btn as ControlTrigger;
+                        trigger.Value = double.Parse(message[2]);
                     }
                 }
             }
-            if (!found) {
-                Debug.LogError("Button " + name + " not found");
-            }
-            return false;
         }
-
-        public bool IsButtonPressed(string btn) {
-            return GetButtonStatus(btn, STATUS_PRESSED);
-        }
-
-        public bool IsButtonReleased(string btn) {
-            return GetButtonStatus(btn, STATUS_RELEASED);
-        }
-
-        public bool IsButtonClicked(string btn) {
-            return GetButtonStatus(btn, STATUS_CLICKED);
-        }
-
-        IEnumerator ToggleClick(BluetoothButton btn) {
+        
+        IEnumerator ToggleClick(ControlButton btn) {
             if (btn.IsClicked) {
                 yield return null;
                 btn.IsClicked = false;
             }
         }
+    }
+
+    public class ControlButton {
+        public string Name { get; set; }
+        public string SymbolicName { get; set; }
+        public bool IsPressed { get; set; }
+        public bool IsClicked { get; set; }
+
+        public ControlButton(string name, string symbolicName) {
+            Name = name;
+            SymbolicName = symbolicName;
+            IsPressed = false;
+            IsClicked = false;
+        }
+
+        public ControlButton(string name) : this(name, name) { }
+
+    }
+
+    public class ControlJoystick : ControlButton
+    {
+        public ControlJoystick(string name) : this(name, name) { }
+
+        public ControlJoystick(string name, string symbolicName) : base(name, symbolicName)
+        {
+            DeltaX = 0;
+            DeltaY = 0;
+        }
+
+        public double DeltaX { get; set; }
+        public double DeltaY { get; set; }
+    }
+
+    public class ControlTrigger : ControlButton
+    {
+        public ControlTrigger(string name) : this(name, name) {  }
+        public ControlTrigger(string name, string symbolicName) : base(name, symbolicName)
+        {
+            Value = 0;
+        }
+
+        public double Value { get; set; }
     }
 }
