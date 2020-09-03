@@ -20,6 +20,21 @@ namespace UnityAndroidBluetooth {
                 return _instance.server;
             }
         }
+        
+        public ControlButton GetButton(string name){
+            foreach(ControlButton btn in buttons){
+                if (btn.Name == name) return btn;
+            }
+            return null;
+        }
+        
+        public void StartServer() {
+            server.Start();
+        }
+        
+        public void StopServer(){
+            server.Stop();
+        }
 
         void Awake()
         {
@@ -30,9 +45,6 @@ namespace UnityAndroidBluetooth {
             } else {
                 _instance = this;
                 _instance.server = new BluetoothServer();
-                if (Bluetooth.IsEnabled) {
-                    _instance.server.Start();
-                }
                 DontDestroyOnLoad(this.gameObject);
             }
         }
