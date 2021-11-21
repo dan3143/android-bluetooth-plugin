@@ -71,14 +71,14 @@ namespace UnityAndroidBluetooth{
 
         /* ========== JNI METHODS ========== */
 
-        public void Connect(string address, string uuid)
+        public bool Connect(string address, string uuid)
         {
-            PluginInstance.Call("connect", address, uuid);
+            return PluginInstance.Call("connect", address, uuid);
         }
 
-        public void Connect(string address)
+        public bool Connect(string address)
         {
-            PluginInstance.Call("connect", address);
+            return PluginInstance.Call("connect", address);
         }
 
         public void Disconnect()
